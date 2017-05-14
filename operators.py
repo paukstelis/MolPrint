@@ -19,7 +19,7 @@
 # <pep8-80 compliant>
 
 # All Operator
-
+import time
 import bpy
 import bmesh
 import itertools
@@ -359,7 +359,9 @@ class MolPrintCPKSplit(Operator):
         return True if bpy.context.scene.molprint.cleaned else False
             
     def execute(self, context):
-    
+        starttime = time.time()
+        bpy.context.scene.molprint.interact = False
+        bpy.context.scene.molprint.autogroup = False
         objlist = itertools.combinations(bpy.context.scene.objects, 2)      
         #Create dummy atoms after putting combinations together
         bpy.ops.mesh.primitive_plane_add(
@@ -383,7 +385,7 @@ class MolPrintCPKSplit(Operator):
 
             if intersect:
                 mesh_helpers.cpkcyl(a,b,dummy1,dummy2)
-                mesh_helpers.cpkcyl(b,a,dummy1,dummy2)
+                #mesh_helpers.cpkcyl(b,a,dummy2,dummy1)
         #Apply all modifiers
         for each in bpy.context.scene.objects:
             if each.modifiers:
@@ -432,5 +434,5 @@ class MolPrintCPKSplit(Operator):
             #ob.select = True
             bpy.context.scene.objects.unlink(ob)
             
-   
+        print("CPK: ", time.time()-starttime)
         return {'FINISHED'}     

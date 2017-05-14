@@ -194,6 +194,7 @@ def update_panel(self, context):
     bpy.utils.register_class(ui.MolPrintToolBarObject)
     ui.MolPrintToolBarMesh.bl_category = context.user_preferences.addons[__name__].preferences.category
     bpy.utils.register_class(ui.MolPrintToolBarMesh)
+    
 
 class printerpreferences(bpy.types.AddonPreferences):
     # this must match the addon name, use '__package__'
@@ -232,9 +233,13 @@ def updategroups(scene):
     return 
     
 classes = (
-
-    ui.MolPrintToolBarObject,
-    ui.MolPrintToolBarMesh,
+    ui.MolPrintToolBar1,
+    ui.MolPrintToolBar2,
+    ui.MolPrintToolBar3,
+    ui.MolPrintToolBar4,
+    ui.MolPrintToolBar5,
+    ui.MolPrintToolBar6,
+    ui.MolPrintToolBar7,
     operators.ImportX3DE,
     operators.MolPrintClean,
     operators.MolPrintGetInteractions,

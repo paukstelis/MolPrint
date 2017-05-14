@@ -20,6 +20,8 @@
 
 # Generic helper functions, to be used by any modules.
 
+# Large portions borrowed from 3D Printing Tools AddOn
+#TODO: Are all of these used?
 import bpy
 import bmesh
 import math
@@ -76,7 +78,8 @@ def scalebonds(scale_val):
             obj.scale = (scale_val,1,scale_val)
             #reset the radius value
             obj["radius"] = obj["radius"]*scale_val 
-    
+
+#Dude, seriously. Clean this up.    
 def cylinder_between(pair):
   x2 = pair[1].location.x
   y2 = pair[1].location.y
@@ -122,8 +125,8 @@ def cylinder_between(pair):
     bpy.context.object.rotation_euler[1] = theta 
     bpy.context.object.rotation_euler[2] = phi
     
-    #This will be for woodruff style pinning
-  
+  #This will be for woodruff style pinning
+  #Does not work well.
   if bpy.context.scene.molprint.woodruff:
     #pick a random long face from cylinder that was just made:
     
@@ -236,6 +239,7 @@ def bmesh_check_intersect_objects(obj, obj2, selectface=False):
 def get_distance(obj1, obj2):
     return  (obj1.location - obj2.location).length
 
+#This is needed for older pymol versions which added lots of extra primitive spheres
 def isinside(obj1,obj2):
     #This is messy, but works reasonably well
     if bb_size(obj1) > bb_size(obj2):
@@ -280,6 +284,7 @@ def makeMaterial(name, diffuse):
     return mat
        
 def updategroups():
+    '''Generates a list of connected spheres/cylinders that will be an independent object'''
     start = time.time()
     #Reset grouplist
     grouplist = []
@@ -384,13 +389,15 @@ def getinteractions():
                 interactionlist.append((each[1],each[0]))     
                 
     return interactionlist
-
+    
+'''
 def union_carve(obj1,obj2):
     mymod = obj1.modifiers.new('simpmod', 'BOOLEAN')
     mymod.operation = 'UNION'
     mymod.solver = 'CARVE'
     mymod.object = obj2
     bpy.ops.object.modifier_apply (modifier='simpmod')
+    
     
 def joinpins(obj):
     #pinlist[:] = (value for value in pinlist if value != 'None')
@@ -412,8 +419,11 @@ def joinpins(obj):
             removelist.append(pin2)
     for each in removelist:
         bpy.context.scene.objects.unlink(each)
+'''
 
+#This is the workhorse of the entire addon. Look for ways to speed up
 def joinall():
+    '''Join and apply pins to different groups'''
     updategroups()
     cylinders = []
     spheres = []
@@ -543,6 +553,7 @@ def joinall():
     print("Difference pinning time:",end-start)
 
 def select_hbonds():
+    '''Selects cylinders below max_hbond as hydrogen bonds'''
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     for each in interaction_list:
         #Reset in case radius value has been changed, won't deselect however
@@ -552,7 +563,9 @@ def select_hbonds():
             each[1].select = True
             each[1]["hbond"] = 1
 
+#Pure nastiness, but couldn't figure out a nicer way initially.
 def select_phosphate(context):
+    '''Select Phosphates based on atom radius'''
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdictsphere = Counter(elem[0] for elem in interaction_list)
     
@@ -579,7 +592,7 @@ def select_phosphate(context):
                                 break
                             
 def select_glyco_na(context):
-
+    '''Select glycosidic bond of nucleic acids.'''
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdict = Counter(elem[0] for elem in interaction_list)
     #rads = (0.51,0.465,0.456)
@@ -607,7 +620,8 @@ def select_glyco_na(context):
             if rads == secondrads and avgdist > 5.56 and countdict.get(second[1][0]) > 1:
                 k.select = True
                 second[1][1].select = True
-           
+
+#Meant for protein selection, not currently functional and maybe not even useful?
 def select_amides(context):
 
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
@@ -633,6 +647,7 @@ def select_amides(context):
                     second[0][1].select = True
 
 def floorall(context):
+    '''Place largest convex hull face orthogonal to Z'''
     vec2 = (0,0,-1)
     for each in bpy.context.scene.objects:
         bpy.ops.object.select_all(action='DESELECT')
@@ -641,6 +656,7 @@ def floorall(context):
         bpy.context.scene.objects.active = each
 
 def floorselected(context):
+    '''Select a surface to make orthogonal to Z. This generates a mean normal from selected faces'''
     obj = bpy.context.scene.objects.active
     assert obj.mode == 'EDIT'
     #Get facenormal for each selected face in our object
@@ -736,10 +752,12 @@ def merge_split_cyls(splitcyllist):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
         bpy.ops.object.select_all(action='DESELECT')
-       
+
+#Tolerance. Not sure why it needs its own method, but OK.  
 def tol(v1, v2):
     return (v1 - v2).length < 0.01
 
+#Used for CPK tools
 def AlignX(v1,v2):
     dvec=v2-v1
     rotation_quat = dvec.to_track_quat('Z', 'X')
@@ -756,26 +774,39 @@ def median_intersect(ob):
     pivot = sum(verts_sel, Vector()) / len(verts_sel)
     return ob.matrix_world * pivot
 
+#Making cylinder objects and doing boolean operations is super slow
+#Is there a sane way to do this just with intersecting verts and
+#filling the face(s) afterward?
+
 def cpkcyl(obj1,obj2, dummy1, dummy2):
+    '''Carve up CPK spheres for multicolor printing'''
     spot1 = median_intersect(obj1)
-    #spot2 = median_intersect(obj2)
-    #Dummy atom two will be along vector between centers
-    #med = (spot1+spot2)/2
     dummy1.location = spot1
     #Here is the vector for positioning second point
-    dx,dy,dz = obj2.location.x - obj1.location.x, obj2.location.y - obj1.location.y, obj2.location.z - obj1.location.z
+    dx,dy,dz = obj2.location.x - obj1.location.x, obj2.location.y - obj1.location.y, obj2.location.z - obj1.location.z   
     dist = (obj2.location - obj1.location).length
     diam = obj1.dimensions.x
-    #make sure it is sufficient large to extend past
     scale = diam/dist
     dummy2.location = (dx*scale+obj1.location.x, dy*scale+obj1.location.y, dz*scale+obj1.location.z)
-    
-    #Now make cyl between dummy1 and dummy2 positions
     dx,dy,dz = dummy2.location.x - dummy1.location.x, dummy2.location.y - dummy1.location.y, dummy2.location.z - dummy1.location.z
+    align = AlignX(obj1.location,obj2.location)
+    make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj1,align)
     
+    #Repeat for second cyl, this way the interface position is exact for both cyls
+    dx,dy,dz = obj1.location.x - obj2.location.x, obj1.location.y - obj2.location.y, obj1.location.z - obj2.location.z
+    dist = (obj1.location - obj2.location).length
+    diam = obj2.dimensions.x
+    scale = diam/dist
+    dummy2.location = (dx*scale+obj2.location.x, dy*scale+obj2.location.y, dz*scale+obj2.location.z)
+    dx,dy,dz = dummy2.location.x - dummy1.location.x, dummy2.location.y - dummy1.location.y, dummy2.location.z - dummy1.location.z
+    align = AlignX(obj2.location,obj1.location)
+    make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj2,align)
+    
+def make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj,align):
+
     bpy.ops.mesh.primitive_cylinder_add(
-        vertices = 16,
-        radius = 2, 
+        vertices = 8,
+        radius = 2,
         depth = (dummy2.location - dummy1.location).length,
         location = (dx/2 + dummy1.location.x, dy/2 + dummy1.location.y, dz/2 + dummy1.location.z)
     )
@@ -784,10 +815,10 @@ def cpkcyl(obj1,obj2, dummy1, dummy2):
     cylinder["ptype"] = "CPKcyl"
     cylinder.rotation_mode='QUATERNION'
     #Set rotation
-    cylinder.rotation_quaternion=AlignX(obj1.location,obj2.location)
+    cylinder.rotation_quaternion=align
     #Now do difference bool
     
-    mymodifier = obj1.modifiers.new('cpkmod', 'BOOLEAN')
+    mymodifier = obj.modifiers.new('cpkmod', 'BOOLEAN')
     mymodifier.operation = 'DIFFERENCE'
-    mymodifier.solver = 'CARVE'
-    mymodifier.object = cylinder
+    mymodifier.solver = 'BMESH'
+    mymodifier.object = cylinder     
