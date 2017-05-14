@@ -154,8 +154,8 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
 
 class MolPrintToolBar6(MolPrintToolBar,Panel):
     bl_category = "MolPrint"
-    bl_label = "Flooring"
-    bl_context = "objectmode"
+    bl_label = "Floor and Export"
+    #bl_context = "objectmode"
 
     def draw(self, context):
         layout = self.layout
@@ -186,12 +186,15 @@ class MolPrintToolBar7(MolPrintToolBar,Panel):
         molprint = scene.molprint
         obj = context.object        
         row = layout.row()
-        row.label("CPK Tools:")
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_cpksplit", text="CPK by atom")
-        # XXX TODO
-        # col.operator("mesh.print3d_clean_thin", text="Wall Thickness")
 
-        #MolPrintToolBar.draw_report(layout, context)
+# So we can have a panel in both object mode and editmode
+class MolPrintFloorObject(MolPrintToolBar6):
 
+    bl_context = "objectmode"
+
+class MolPrintFloorMesh(MolPrintToolBar6):
+
+    bl_context = "mesh_edit"
 

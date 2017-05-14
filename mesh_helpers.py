@@ -67,6 +67,7 @@ def makestrut(obj1,obj2):
     strut["hbond"] = True
     strut["pinlist"] = ["None"]
     
+    #Go ahead and update interaction list now
     if len(interactionlist) > 2:
         interactionlist.append((obj1,strut))
         interactionlist.append((obj2,strut))
@@ -820,5 +821,5 @@ def make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj,align):
     
     mymodifier = obj.modifiers.new('cpkmod', 'BOOLEAN')
     mymodifier.operation = 'DIFFERENCE'
-    mymodifier.solver = 'BMESH'
+    mymodifier.solver = 'CARVE'
     mymodifier.object = cylinder     
