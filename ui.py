@@ -150,6 +150,9 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.prop(molprint,"woodruff")
         rowsub = layout.row(align=True)
+        rowsub.prop(molprint,"multicolor")
+        rowsub = layout.row(align=True)
+   
         rowsub.operator("mesh.molprint_pinjoin", text="Pin and Join")
 
 class MolPrintToolBar6(MolPrintToolBar,Panel):

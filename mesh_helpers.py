@@ -340,21 +340,7 @@ def updategroups():
     bpy.context.scene.molprint_lists.grouplist = grouplist
     #This updates materials - useful for small things, but might slow things down for bigger stuff
     
-    #if bpy.context.scene.molprint.autocolor:
-        #Generate array of colors based on number of groups
-    color_num = 0
-    i = 1.0
-    colors = []
-    toggle_r = itertools.cycle([0,0.25,0.5,0.75,1])
-    toggle_g = itertools.cycle([1.0, 0.66, 0.33, 0])
-    toggle_b = itertools.cycle([1.0,0.33,0.25,0.66,0.05,0.75,0])
-    while color_num <= len(grouplist):
-        r = next(toggle_r)
-        g = next(toggle_g)
-        b = next(toggle_b)
-        colors.append((r,g,b))
-        color_num+=1
-            
+    colors = material_colors(grouplist) 
     #Is creating materials each time a waste of resources? Probably    
     m = 0
     for each in grouplist:
@@ -366,6 +352,35 @@ def updategroups():
       
     end = time.time()
     print("Update group seconds:", end-start)
+
+def material_colors(thelist):
+    color_num = 0
+    i = 1.0
+    colors = []
+    toggle_r = itertools.cycle([0,0.25,0.5,0.75,1])
+    toggle_g = itertools.cycle([1.0, 0.66, 0.33, 0])
+    toggle_b = itertools.cycle([1.0,0.33,0.25,0.66,0.05,0.75,0])
+    while color_num <= len(thelist):
+        r = next(toggle_r)
+        g = next(toggle_g)
+        b = next(toggle_b)
+        colors.append((r,g,b))
+        color_num+=1
+    
+    return colors        
+
+def color_by_radius():
+
+    unique = radius_sort(bpy.context.scene.objects)
+    colors = material_colors(bpy.context.scene.objects)
+    
+    m = 0
+    for each in unique:
+        mat = makeMaterial('mat'+str(m),colors[m])
+        for ob in each:    
+            ob.data.materials.clear()
+            ob.data.materials.append(mat)
+        m += 1
             
 def getinteractions():
     #Build a complete list of interactions between objects to speed up joining
@@ -391,15 +406,18 @@ def getinteractions():
                 
     return interactionlist
     
-'''
-def union_carve(obj1,obj2):
+
+def bool_carve(obj1,obj2,booltype,modapp=False):
     mymod = obj1.modifiers.new('simpmod', 'BOOLEAN')
-    mymod.operation = 'UNION'
+    mymod.operation = booltype
     mymod.solver = 'CARVE'
     mymod.object = obj2
-    bpy.ops.object.modifier_apply (modifier='simpmod')
+    if modapp:
+        bpy.context.scene.objects.active = obj1
+        bpy.ops.object.modifier_apply (modifier='simpmod')
+    #bpy.ops.object.modifier_apply (modifier='simpmod')
     
-    
+'''    
 def joinpins(obj):
     #pinlist[:] = (value for value in pinlist if value != 'None')
     if len(obj["pinlist"]) <= 1:
@@ -421,7 +439,15 @@ def joinpins(obj):
     for each in removelist:
         bpy.context.scene.objects.unlink(each)
 '''
-
+def radius_sort(tosort):
+#Create list that contains all objects by radius. Tosort is the list to sort from
+    sortlist = [ob for ob in tosort]
+    sortlist.sort(key = lambda o: o["radius"])
+    unique = []
+    for key, group in itertools.groupby(sortlist, lambda item: item["radius"]):
+        unique.append(list(group))
+    return unique
+    
 #This is the workhorse of the entire addon. Look for ways to speed up
 def joinall():
     '''Join and apply pins to different groups'''
@@ -447,17 +473,13 @@ def joinall():
             intersect = bmesh_check_intersect_objects(sphere, cyl)
             if intersect:
                 pairs.append((sphere,cyl))
-    #difference of pin pairs
+                
     for each in pairs:
-        mymodifier = each[1].modifiers.new('mymodifier1', 'BOOLEAN')
-        mymodifier.operation = 'DIFFERENCE'
-        mymodifier.solver = 'CARVE'
-        mymodifier.object = each[0]
-        bpy.context.scene.objects.active = each[1]
-        bpy.ops.object.modifier_apply (modifier='mymodifier1')
-    
+        bool_carve(each[1],each[0],'DIFFERENCE',modapp=True)
+            
     pinlist = []
     oblist = []
+    
     for each in pairs:
         #Make pin objects and give them a specific ptype   
         cylinder_between(each)
@@ -466,92 +488,112 @@ def joinall():
         pin["ptype"] = 'pin'
         pinlist.append(pin)
         each[0]["pinlist"] += [pin.name]
-        #union cylinder and pin
-        mymodifier = each[1].modifiers.new('mymodifier2', 'BOOLEAN')
-        mymodifier.operation = 'UNION'
-        mymodifier.solver = 'CARVE'
-        mymodifier.object = pin
-        bpy.context.scene.objects.active = each[1]
-        bpy.ops.object.modifier_apply (modifier='mymodifier2')
-        #union_carve(each[1],pin)
+        #union cylinder and pin if normal mode
+        
+        bool_carve(each[1],pin,'UNION',modapp=True)
         bpy.ops.object.select_all(action='DESELECT')
        
     for group in bpy.context.scene.molprint_lists.grouplist:
         bpy.ops.object.select_all(action='DESELECT')
         pins = []
         
-        for obj in group:
-            obpin = []
-            obpin[:] = (value for value in obj["pinlist"] if value != 'None')
-            pins = pins+obpin
-            obj.select = True
+        if bpy.context.scene.molprint.multicolor:
+            cylob = None
+            new_obs = []
+            multis = radius_sort(group)
+            for each in multis:
+                pins = []
+                bpy.ops.object.select_all(action='DESELECT')
+                
+                for ob in each:
+                    obpin = []
+                    obpin[:] = (value for value in ob["pinlist"] if value != 'None')
+                    pins = pins+obpin
+                    ob.select = True
+
+                pins = list(set(pins))
+                bpy.context.selected_objects[0]["pinlist"] = pins    
+                bpy.context.scene.objects.active = bpy.context.selected_objects[0]
+                bpy.ops.object.join()
+                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                new_obs.append(bpy.context.selected_objects[0])
+            
+            cylob = next(value for value in new_obs if value["ptype"] == 'Cylinder')  
+            sphereobs = [value for value in new_obs if value["ptype"] == 'Sphere']
+            #Difference sphere and cyls
+            print(cylob,sphereobs)
+            for sp in sphereobs:
+                try:
+                    bool_carve(cylob,sp,"DIFFERENCE",modapp=True)
+                except:
+                    continue
+            #Cylinder fixing
+            newcube = intersect_pin(cylob)
+            cylob = newcube
+            #Difference pinning
+            for sp in sphereobs:
+               difference_pin(sp)
+               
         
-        #Make all objects of a group active and join    
-        bpy.context.scene.objects.active = group[0]
-        #copy material to joined group?
-        #mat = group[0].data.materials
-        pins = list(set(pins))
-        group[0]["pinlist"] = pins
-        #print(pins)
-        bpy.ops.object.join()
-        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
-        oblist.append(group[0])
+        #combine all pins objects for each group
+        else:
+            for obj in group:
+                obpin = []
+                obpin[:] = (value for value in obj["pinlist"] if value != 'None')
+                pins = pins+obpin
+                obj.select = True
         
-    end = time.time()
-    print("Pin generation and joining time:", end-start)
+            #Make all objects of a group active and join    
+            bpy.context.scene.objects.active = group[0]
+            #Remove duplicates
+            pins = list(set(pins))
+            group[0]["pinlist"] = pins
+            #print(pins)
+        
+                    
+            bpy.ops.object.join()
+            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
+            newcube = intersect_pin(group[0])
+            difference_pin(newcube)
+            
+    if bpy.context.scene.molprint.multicolor:
+        color_by_radius()
+        
+def intersect_pin(ob):
+    print(ob)
     start = time.time()
-    #unionize joined objects using large cube and intersection
-    for ob in oblist:
-        x = ob.location.x
-        y = ob.location.y
-        z = ob.location.z
-        bpy.ops.mesh.primitive_cube_add(location=(x,y,z))
-        bpy.ops.transform.resize(value=(30, 30, 30))
-        cube = bpy.context.selected_objects[0]
-        cube["ptype"] = 'newcube'
-        pinlist[:] = (value for value in ob["pinlist"] if value != 'None')
-        cube["pinlist"] = pinlist
-        mymodifier = cube.modifiers.new('cubeto', 'BOOLEAN')
-        mymodifier.operation = 'INTERSECT'
-        mymodifier.solver = 'CARVE'
-        mymodifier.object = ob
-        bpy.ops.object.modifier_apply (modifier='cubeto')
-        bpy.context.scene.objects.unlink(ob)
-        
+    pinlist = []
+    bpy.ops.mesh.primitive_cube_add(location=(ob.location))
+    bpy.ops.transform.resize(value=(30, 30, 30))
+    cube = bpy.context.selected_objects[0]
+    cube["ptype"] = 'newcube'
+    pinlist[:] = (value for value in ob["pinlist"] if value != 'None')
+    cube["pinlist"] = pinlist
+    cube["radius"] = ob["radius"]
+    bool_carve(cube,ob,'INTERSECT',modapp=True)
+    bpy.ops.object.select_all(action='DESELECT')
+    ob.select = True
+    bpy.ops.object.delete()       
     end = time.time()
     print("Intersect unionization time:",end-start)
+    return cube
+    
+def difference_pin(obj):
     start = time.time()
-    #now do difference with pin objects with increased scale
-    for each in bpy.context.scene.objects:
-        if each["ptype"] == 'newcube' and len(each["pinlist"]) > 0:
-            #If pins touch each other, this can cause issues. Older version
-            #joined pins prior to doing difference.
-            #TODO: re-explore this
-            #joinpins(each)
-            #sce.update()
-            bpy.ops.object.select_all(action='DESELECT')
-            for pinname in each["pinlist"]:
-                pin = bpy.context.scene.objects[pinname]
-                pin.scale=((1.05,1.05,1.05))
-                pin.select = True
-            firstpin = bpy.context.scene.objects[each["pinlist"][0]]
-            bpy.context.scene.objects.active = firstpin
-            bpy.ops.object.join()              
-            mymodifier = each.modifiers.new('pinmodifier', 'BOOLEAN')
-            mymodifier.operation = 'DIFFERENCE'
-            mymodifier.solver = 'CARVE'
-            mymodifier.object = firstpin
-            bpy.context.scene.objects.active = each
-            bpy.ops.object.modifier_apply (modifier='pinmodifier')
-    #This is an ugly way to check and delete only pins. 
-    #Not sure why I did this initially. Must be a simpler way?                
-    for each in bpy.context.scene.objects:
-        try:
-            pinlist = each["pinlist"]
-        except:
-            bpy.context.scene.objects.unlink(each)
-    end = time.time()
-    print("Difference pinning time:",end-start)
+    if len(obj["pinlist"]) > 0:
+        bpy.ops.object.select_all(action='DESELECT')
+        for pinname in obj["pinlist"]:
+            pin = bpy.context.scene.objects[pinname]
+            pin.scale=((1.05,1.05,1.05))
+            pin.select = True
+                
+        firstpin = bpy.context.scene.objects[obj["pinlist"][0]]
+        bpy.context.scene.objects.active = firstpin
+        bpy.ops.object.join()           
+        bool_carve(obj,firstpin,'DIFFERENCE',modapp=True)
+        bpy.ops.object.select_all(action='DESELECT')
+        firstpin.select=True
+        bpy.ops.object.delete()
 
 def select_hbonds():
     '''Selects cylinders below max_hbond as hydrogen bonds'''

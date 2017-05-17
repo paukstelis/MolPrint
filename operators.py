@@ -399,12 +399,8 @@ class MolPrintCPKSplit(Operator):
                 bpy.ops.object.delete()
                 
         #Create list that contains all atoms by radius.
-        sortlist = [ob for ob in bpy.context.scene.objects]
-        sortlist.sort(key = lambda o: o["radius"])
-        unique = []
-        for key, group in itertools.groupby(sortlist, lambda item: item["radius"]):
-            unique.append(list(group))
-        
+        unique = mesh_helpers.radius_sort(bpy.context.scene.objects)
+  
         #Join all spheres of the same size into single objects
         for each in unique:
             bpy.ops.object.select_all(action='DESELECT')
@@ -415,24 +411,16 @@ class MolPrintCPKSplit(Operator):
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
         #Do "intersect" unionization
         for ob in bpy.context.scene.objects:
-            #bpy.ops.object.select_all(action='DESELECT')
-            x = ob.location.x
-            y = ob.location.y
-            z = ob.location.z
-            bpy.ops.mesh.primitive_cube_add(location=(x,y,z))
+            bpy.ops.mesh.primitive_cube_add(location=ob.location)
             bpy.ops.transform.resize(value=(30, 30, 30))
             cube = bpy.context.selected_objects[0]
             cube["ptype"] = "CPKcube"
             cube["radius"] = ob["radius"]
             mat = ob.data.materials[0]
             cube.data.materials.append(mat)
-            mymodifier = cube.modifiers.new('cubeto', 'BOOLEAN')
-            mymodifier.operation = 'INTERSECT'
-            mymodifier.solver = 'CARVE'
-            mymodifier.object = ob
-            bpy.ops.object.modifier_apply (modifier='cubeto')
-            #ob.select = True
-            bpy.context.scene.objects.unlink(ob)
+            bool_carve(cube,ob,'INTERSECT',modapp=True)
+            ob.select = True
+            bpy.ops.object.delete()
             
         print("CPK: ", time.time()-starttime)
         return {'FINISHED'}     

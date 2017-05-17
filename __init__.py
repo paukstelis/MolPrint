@@ -183,6 +183,11 @@ class MolPrintSettings(PropertyGroup):
             description="Fuse double bonds",
             default=False,
             )
+    multicolor = BoolProperty(
+            name="Multicolor",
+            description="Separate atoms and bonds of each group for multicolor printing",
+            default=False,
+            )
 ## Addons Preferences Update Panel
 def update_panel(self, context):
     try:
