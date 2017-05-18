@@ -280,7 +280,12 @@ class MolPrintFloorAll(Operator):
     """Find optimal orientation to fit on build plate"""
     bl_idname = "mesh.molprint_floorall"
     bl_label = "MolPrint Floor objects"
-
+    @classmethod
+    def poll(cls, context):
+        if bpy.context.scene.molprint.multicolor:
+            return False
+        else:
+            return True
     def execute(self, context):
         mesh_helpers.floorall(context)
         return {'FINISHED'}  
@@ -409,7 +414,7 @@ class MolPrintCPKSplit(Operator):
             bpy.context.scene.objects.active = bpy.context.selected_objects[0]
             bpy.ops.object.join()
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-        #Do "intersect" unionization
+        #Do "intersect" unionization, may not be necessary in all cases, but is in some
         for ob in bpy.context.scene.objects:
             bpy.ops.mesh.primitive_cube_add(location=ob.location)
             bpy.ops.transform.resize(value=(30, 30, 30))
@@ -418,7 +423,8 @@ class MolPrintCPKSplit(Operator):
             cube["radius"] = ob["radius"]
             mat = ob.data.materials[0]
             cube.data.materials.append(mat)
-            bool_carve(cube,ob,'INTERSECT',modapp=True)
+            mesh_helpers.bool_carve(cube,ob,'INTERSECT',modapp=True)
+            bpy.ops.object.select_all(action='DESELECT')
             ob.select = True
             bpy.ops.object.delete()
             

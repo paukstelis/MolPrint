@@ -35,6 +35,7 @@ from mathutils import Matrix,Vector
 from collections import Counter
 from decimal import *
 
+
 def bb_size(obj):
 
    x = obj.dimensions.x
@@ -91,7 +92,7 @@ def cylinder_between(pair):
   dx = x2 - x1
   dy = y2 - y1
   dz = z2 - z1    
-  #dist = math.sqrt(dx**2 + dy**2 + dz**2)
+
   dist = get_distance(pair[0],pair[1])
   r = pair[1]["radius"]/1.5
   hbond = pair[1]["hbond"]
@@ -240,7 +241,7 @@ def bmesh_check_intersect_objects(obj, obj2, selectface=False):
 def get_distance(obj1, obj2):
     return  (obj1.location - obj2.location).length
 
-#This is needed for older pymol versions which added lots of extra primitive spheres
+#This is needed for older pymol vrml versions which added lots of extra primitive spheres
 def isinside(obj1,obj2):
     #This is messy, but works reasonably well
     if bb_size(obj1) > bb_size(obj2):
@@ -276,13 +277,6 @@ def isinside(obj1,obj2):
         return small
     else:
         return None
-    
-def makeMaterial(name, diffuse):
-    mat = bpy.data.materials.new(name)
-    mat.diffuse_color = diffuse
-    mat.diffuse_shader = 'LAMBERT' 
-    mat.diffuse_intensity = 1.0 
-    return mat
        
 def updategroups():
     '''Generates a list of connected spheres/cylinders that will be an independent object'''
@@ -324,10 +318,8 @@ def updategroups():
                         continue
                     
                     additionlist.append(nexts)
-            #print('Addition list:', additionlist)
+
             nextlist = []
-            #Is a copy necessary here? Is it slower?
-            #nextlist = copy.copy(additionlist)
             nextlist = additionlist 
             if len(nextlist) > 0:
                 additions = True
@@ -338,8 +330,7 @@ def updategroups():
         grouplist.append(group)
 
     bpy.context.scene.molprint_lists.grouplist = grouplist
-    #This updates materials - useful for small things, but might slow things down for bigger stuff
-    
+    #This updates materials - useful for small things, but might slow things down for bigger stuff   
     colors = material_colors(grouplist) 
     #Is creating materials each time a waste of resources? Probably    
     m = 0
@@ -352,6 +343,14 @@ def updategroups():
       
     end = time.time()
     print("Update group seconds:", end-start)
+
+    
+def makeMaterial(name, diffuse):
+    mat = bpy.data.materials.new(name)
+    mat.diffuse_color = diffuse
+    mat.diffuse_shader = 'LAMBERT' 
+    mat.diffuse_intensity = 1.0 
+    return mat
 
 def material_colors(thelist):
     color_num = 0
@@ -370,7 +369,7 @@ def material_colors(thelist):
     return colors        
 
 def color_by_radius():
-
+    '''Color every object in the model by radius value'''
     unique = radius_sort(bpy.context.scene.objects)
     colors = material_colors(bpy.context.scene.objects)
     
@@ -383,7 +382,7 @@ def color_by_radius():
         m += 1
             
 def getinteractions():
-    #Build a complete list of interactions between objects to speed up joining
+    '''Build a complete list of interactions between objects to speed up joining'''
     objlist = itertools.combinations(bpy.context.scene.objects, 2)
     interactionlist = []
     for each in objlist:
@@ -416,29 +415,7 @@ def bool_carve(obj1,obj2,booltype,modapp=False):
         bpy.context.scene.objects.active = obj1
         bpy.ops.object.modifier_apply (modifier='simpmod')
     #bpy.ops.object.modifier_apply (modifier='simpmod')
-    
-'''    
-def joinpins(obj):
-    #pinlist[:] = (value for value in pinlist if value != 'None')
-    if len(obj["pinlist"]) <= 1:
-        return
-    objlist = itertools.combinations(obj["pinlist"], 2)
-    removelist = []
-    for each in objlist:
-        try:
-            pin1 = bpy.context.scene.objects[each[0]]
-            pin2 = bpy.context.scene.objects[each[1]]
-        except:
-            continue
-        intersect = bmesh_check_intersect_objects(pin1,pin2)
-        if intersect:
-            union_carve(pin1,pin2)
-            print("Joining pins:",pin1,pin2)
-            obj["pinlist"].remove(pin2.name)
-            removelist.append(pin2)
-    for each in removelist:
-        bpy.context.scene.objects.unlink(each)
-'''
+
 def radius_sort(tosort):
 #Create list that contains all objects by radius. Tosort is the list to sort from
     sortlist = [ob for ob in tosort]
@@ -492,7 +469,7 @@ def joinall():
         
         bool_carve(each[1],pin,'UNION',modapp=True)
         bpy.ops.object.select_all(action='DESELECT')
-       
+    #TODO: After assembly, rename final objects group1, group2, etc. So export is nicer   
     for group in bpy.context.scene.molprint_lists.grouplist:
         bpy.ops.object.select_all(action='DESELECT')
         pins = []
@@ -639,10 +616,10 @@ def select_glyco_na(context):
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdict = Counter(elem[0] for elem in interaction_list)
     #rads = (0.51,0.465,0.456)
-    molprint = bpy.context.scene.molprint
-    rads = (round(molprint.carbon_radius,3),round(molprint.nitrogen_radius,3),round(molprint.oxygen_radius,3))
+    #molprint = bpy.context.scene.molprint
+    rads = (round(bpy.context.scene.molprint.carbon_radius,3),round(bpy.context.scene.molprint.nitrogen_radius,3),round(bpy.context.scene.molprint.oxygen_radius,3))
     for k, v in countdict.items():
-        if v == 3 and k["radius"] == round(molprint.carbon_radius,3):
+        if v == 3 and k["radius"] == round(bpy.context.scene.molprint.carbon_radius,3):
             #print('Sphere:',k)
             #k.select = True
             #first get all cylinders connected, ignoring H-bonds
@@ -663,7 +640,7 @@ def select_glyco_na(context):
             if rads == secondrads and avgdist > 5.56 and countdict.get(second[1][0]) > 1:
                 k.select = True
                 second[1][1].select = True
-
+'''
 #Meant for protein selection, not currently functional and maybe not even useful?
 def select_amides(context):
 
@@ -688,7 +665,7 @@ def select_amides(context):
                 if countdict.get(second[1][0]) > 1:                 
                     second[0][0].select = True
                     second[0][1].select = True
-
+'''
 def floorall(context):
     '''Place largest convex hull face orthogonal to Z'''
     vec2 = (0,0,-1)
