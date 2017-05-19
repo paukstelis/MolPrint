@@ -145,10 +145,16 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
         obj = context.object
         
         row = layout.row()
+        #rowsub = layout.row(align=True)
         rowsub = layout.row(align=True)
-        rowsub.prop(molprint,"cubepin")
+        rowsub.label("Pin sides")
+        rowsub.prop(molprint, "pin_sides", text="")
         rowsub = layout.row(align=True)
-        rowsub.prop(molprint,"woodruff")
+        rowsub.label("Pin:bond diameter")
+        rowsub.prop(molprint, "pintobond", text="")
+        #rowsub.prop(molprint,"cubepin")
+        #rowsub = layout.row(align=True)
+        #rowsub.prop(molprint,"woodruff")
         rowsub = layout.row(align=True)
         rowsub.prop(molprint,"multicolor")
         rowsub = layout.row(align=True)
@@ -177,6 +183,15 @@ class MolPrintToolBar6(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_exportall", text="Export All")
 
+# So we can have a panel in both object mode and editmode
+class MolPrintFloorObject(MolPrintToolBar6):
+
+    bl_context = "objectmode"
+
+class MolPrintFloorMesh(MolPrintToolBar6):
+
+    bl_context = "mesh_edit"
+
 class MolPrintToolBar7(MolPrintToolBar,Panel):
     bl_category = "MolPrint"
     bl_label = "CPK Tools"
@@ -192,12 +207,5 @@ class MolPrintToolBar7(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_cpksplit", text="CPK by atom")
 
-# So we can have a panel in both object mode and editmode
-class MolPrintFloorObject(MolPrintToolBar6):
 
-    bl_context = "objectmode"
-
-class MolPrintFloorMesh(MolPrintToolBar6):
-
-    bl_context = "mesh_edit"
 

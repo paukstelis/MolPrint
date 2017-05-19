@@ -62,7 +62,6 @@ class MolPrintSettings(PropertyGroup):
             description = "Number of circle division for objects. Large numbers slow things down!",
             default=16,
             )
-
     strut_radius = FloatProperty(
             name="Strut radius",
             description="Radius of added struts",
@@ -142,6 +141,19 @@ class MolPrintSettings(PropertyGroup):
             name="Color Groups",
             description="Autocoloring,requires autogrouping",
             default=False,
+            )
+    pin_sides = IntProperty(
+            name = "Number of sides for each pin cylinder",
+            description = "Number of sides the pin will have. 3 = triangle, 4 = square, etc",
+            default=16,
+            min=3, max=32
+            )
+    pintobond = FloatProperty(
+            name="Pin-to-bond ratio",
+            description="The ratio of the pin size the bond it will be joined with.",
+            default=0.666,
+            precision=3,
+            min=0.1, max=1,
             )
     cubepin = BoolProperty(
             name="Square Pins",
@@ -243,9 +255,9 @@ classes = (
     ui.MolPrintToolBar3,
     ui.MolPrintToolBar4,
     ui.MolPrintToolBar5,
-    ui.MolPrintToolBar7,
     ui.MolPrintFloorObject,
     ui.MolPrintFloorMesh,
+    ui.MolPrintToolBar7,
     operators.ImportX3DE,
     operators.MolPrintClean,
     operators.MolPrintGetInteractions,

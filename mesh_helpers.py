@@ -94,7 +94,8 @@ def cylinder_between(pair):
   dz = z2 - z1    
 
   dist = get_distance(pair[0],pair[1])
-  r = pair[1]["radius"]/1.5
+  #r = pair[1]["radius"]/1.5
+  r = pair[1]["radius"]*bpy.context.scene.molprint.pintobond
   hbond = pair[1]["hbond"]
   
   #Pin with rectangles for easier assembly
@@ -115,7 +116,7 @@ def cylinder_between(pair):
   #Pin with cylinders for rotation about bonds  
   else:
     bpy.ops.mesh.primitive_cylinder_add(
-      vertices = bpy.context.scene.molprint.prim_detail,
+      vertices = bpy.context.scene.molprint.pin_sides,
       radius = r, 
       depth = dist,
       location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)   
@@ -129,6 +130,7 @@ def cylinder_between(pair):
     
   #This will be for woodruff style pinning
   #Does not work well.
+  '''
   if bpy.context.scene.molprint.woodruff:
     #pick a random long face from cylinder that was just made:
     
@@ -164,7 +166,7 @@ def cylinder_between(pair):
     bpy.context.scene.objects.active = pin
     bpy.ops.object.modifier_apply (modifier='woodruff')
     bpy.context.scene.objects.unlink(wood)
-    
+    '''   
 def bmesh_copy_from_object(obj, transform=True, triangulate=True, apply_modifiers=False):
 
     assert(obj.type == 'MESH')
@@ -451,6 +453,14 @@ def joinall():
             if intersect:
                 pairs.append((sphere,cyl))
                 
+    #Sanity check to make sure pairs are in different groups, otherwise things explode
+    for pair in pairs:
+        p1group = next(((i) for i, group in enumerate(bpy.context.scene.molprint_lists.grouplist) if pair[0] in group), None)
+        p2group = next(((i) for i, group in enumerate(bpy.context.scene.molprint_lists.grouplist) if pair[1] in group), None)
+        #print(p1group,p2group)
+        if p1group == p2group:
+            pairs.remove(pair)
+                   
     for each in pairs:
         bool_carve(each[1],each[0],'DIFFERENCE',modapp=True)
             
