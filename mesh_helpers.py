@@ -30,6 +30,7 @@ import itertools
 import random
 import time
 import copy
+import addon_utils
 from mathutils.bvhtree import BVHTree
 from mathutils import Matrix,Vector
 from collections import Counter
@@ -851,4 +852,11 @@ def make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj,align):
     mymodifier = obj.modifiers.new('cpkmod', 'BOOLEAN')
     mymodifier.operation = 'DIFFERENCE'
     mymodifier.solver = 'CARVE'
-    mymodifier.object = cylinder     
+    mymodifier.object = cylinder
+
+def addon_ensure(addon_id):
+        # Enable the addon, dont change preferences.
+        #So we can used 3d printing tools exports and not write our own!
+        default_state, loaded_state = addon_utils.check(addon_id)
+        if not loaded_state:
+            addon_utils.enable(addon_id, default_set=False)     

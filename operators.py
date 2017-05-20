@@ -351,7 +351,14 @@ class MolPrintExportAll(Operator):
         return True if bpy.context.scene.molprint.joined else False
 
     def execute(self, context):
-        mesh_helpers.exportall(context)
+        mesh_helpers.addon_ensure("object_print3d_utils")
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in bpy.context.scene.objects:
+            print(obj)
+            obj.select = True
+            bpy.context.scene.objects.active = obj
+            bpy.ops.mesh.print3d_export()
+            bpy.ops.object.select_all(action='DESELECT')
         return {'FINISHED'}
 
 class MolPrintCPKSplit(Operator):
