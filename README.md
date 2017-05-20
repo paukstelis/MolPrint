@@ -23,3 +23,5 @@ Additional features include:
 - Models are "floored" to the build plate
 - Models are exported as STL files for printing.
 
+Video introduction:
+https://youtu.be/0eEAlyHRbp4
