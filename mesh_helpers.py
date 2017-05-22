@@ -762,6 +762,7 @@ def check_split_cyls(obj1,obj2,splitcyllist):
 
 def merge_split_cyls(splitcyllist):
     #looked into doing this with bmesh, but wasn't as straightforward :(
+    print(splitcyllist)
     for a,b in splitcyllist:
         #Some models can have odd organization that leads to failures. Try to fix with a quick check:
         try:
@@ -783,6 +784,7 @@ def merge_split_cyls(splitcyllist):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
         bpy.ops.object.select_all(action='DESELECT')
+
 
 #Tolerance. Not sure why it needs its own method, but OK.  
 def tol(v1, v2):

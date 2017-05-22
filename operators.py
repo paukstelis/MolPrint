@@ -98,6 +98,8 @@ class MolPrintClean(Operator):
         for obj in bpy.context.scene.objects:
             if obj.type != 'MESH':
                 bpy.context.scene.objects.unlink(obj)
+        #Make all linked objects single user: Jmol issue
+        bpy.ops.object.make_single_user(type='ALL',object=True,obdata=True)
         #Generate a list of pairs of existing objects to do comparisons against
         objlist = itertools.combinations(bpy.context.scene.objects, 2)
         #TODO: Make this whole thing more pythonic

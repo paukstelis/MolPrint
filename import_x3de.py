@@ -2526,12 +2526,17 @@ def importMesh_Cylinder(geom, ancestry, bpyima):
     # Extra parameter subdivision="n" - how many faces to use
     radius = geom.getFieldAsFloat('radius', 1.0, ancestry)
     height = geom.getFieldAsFloat('height', 2, ancestry)
-    #Chimera outputs without top and bottom which are useful for interaction lists
-    bottom = True
-    top = True
-    #bottom = geom.getFieldAsBool('bottom', True, ancestry)
+    bottom = geom.getFieldAsBool('bottom', True, ancestry)
+    top = geom.getFieldAsBool('top', True, ancestry)
     side = geom.getFieldAsBool('side', True, ancestry)
-    #top = geom.getFieldAsBool('top', True, ancestry)
+    #Chimera outputs without top and bottom which are useful for interaction lists
+    #This makes sure they have top and bottom and that split cylinders touch
+    #Extra height was found empirically, but might need to change
+    if not bottom:
+        height = height+0.0005
+        bottom = True
+        top = True
+    
 
     n = geom.getFieldAsInt('subdivision', GLOBALS['CIRCLE_DETAIL'], ancestry)
 
