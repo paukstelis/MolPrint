@@ -130,6 +130,7 @@ class MolPrintClean(Operator):
             
         bpy.context.scene.molprint.cleaned = True
         bpy.ops.mesh.molprint_interactions()
+        bpy.ops.object.select_all(action='DESELECT')
         return {'FINISHED'}
                     
 class MolPrintGetInteractions(Operator):
@@ -262,6 +263,20 @@ class MolPrintSelectPhosphate(Operator):
             return False
     def execute(self, context):
         mesh_helpers.select_phosphate(context)
+        return {'FINISHED'}
+
+class MolPrintSelectAmide(Operator):
+    """Select all amide backbone groups"""
+    bl_idname = "mesh.molprint_selectamide"
+    bl_label = "MolPrint Select Phosphate"
+    @classmethod
+    def poll(cls, context):
+        if bpy.context.scene.molprint.interact:
+            return True
+        else:
+            return False
+    def execute(self, context):
+        mesh_helpers.select_amides(context)
         return {'FINISHED'}
         
 class MolPrintSelectGlyco(Operator):

@@ -79,21 +79,24 @@ class MolPrintSettings(PropertyGroup):
     nitrogen_radius = FloatProperty(
             name="N-radius",
             description="Nitrogen atom radius",
-            default=0.465,
+            #default=0.465,
+            default=0.540,
             precision=3,
             min=0.0, max=4.0,
             )
     carbon_radius = FloatProperty(
             name="C-radius",
             description="Carbon atom radius",
-            default=0.510,
+            #default=0.510,
+            default=0.600,
             precision=3,
             min=0.0, max=4.0,
             )
     oxygen_radius = FloatProperty(
             name="O-radius",
             description="Oxygen atom radius",
-            default=0.456,
+            #default=0.456,
+            default=0.534,
             precision=3,
             min=0.0, max=4.0,
             )
@@ -155,6 +158,19 @@ class MolPrintSettings(PropertyGroup):
             precision=3,
             min=0.1, max=1,
             )
+    h_pin_sides = IntProperty(
+            name = "Number of sides for each H-bond pin cylinder",
+            description = "Number of sides the H-bond pin",
+            default=16,
+            min=3, max=32
+            )
+    h_pintobond = FloatProperty(
+            name="Pin-to-bond ratio for H-bonds",
+            description="The ratio of the pin size to the H-bond",
+            default=0.90,
+            precision=3,
+            min=0.1, max=0.98,
+            )            
     cubepin = BoolProperty(
             name="Square Pins",
             description="Pin generation with cube/rectangles",
@@ -266,6 +282,7 @@ classes = (
     operators.MolPrintUpdateGroups,
     operators.MolPrintSelectHbonds,
     operators.MolPrintSelectPhosphate,
+    operators.MolPrintSelectAmide,
     operators.MolPrintSelectGlyco,
     operators.MolPrintPinJoin,
     operators.MolPrintFloorAll,

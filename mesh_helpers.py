@@ -95,79 +95,34 @@ def cylinder_between(pair):
   dz = z2 - z1    
 
   dist = get_distance(pair[0],pair[1])
-  #r = pair[1]["radius"]/1.5
-  r = pair[1]["radius"]*bpy.context.scene.molprint.pintobond
   hbond = pair[1]["hbond"]
-  
-  #Pin with rectangles for easier assembly
-  if bpy.context.scene.molprint.cubepin and not hbond:
-    bpy.ops.mesh.primitive_cube_add(
-      radius = r, 
-      location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)   
-    )
-    pin = bpy.context.scene.objects.active
-    phi = math.atan2(dy, dx) 
-    theta = math.acos(dz/dist) 
-    bpy.ops.transform.resize( value=(pin.dimensions.x*2,pin.dimensions.y*2, dist*4) )
-    bpy.ops.object.transform_apply( scale=True )
-    bpy.context.object.rotation_euler[1] = theta 
-    bpy.context.object.rotation_euler[2] = phi
-    #resizes the cube
-  
-  #Pin with cylinders for rotation about bonds  
-  else:
+
+  if not hbond:
+    r = pair[1]["radius"]*bpy.context.scene.molprint.pintobond
     bpy.ops.mesh.primitive_cylinder_add(
       vertices = bpy.context.scene.molprint.pin_sides,
       radius = r, 
       depth = dist,
+      location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)
+    )
+    
+  #Hbond pinning is separate 
+  else:
+    r = pair[1]["radius"]*bpy.context.scene.molprint.h_pintobond
+    bpy.ops.mesh.primitive_cylinder_add(
+      vertices = bpy.context.scene.molprint.h_pin_sides,
+      radius = r, 
+      depth = dist,
       location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)   
     )
-    pin = bpy.context.scene.objects.active
-    cyldim = pin.dimensions
-    phi = math.atan2(dy, dx) 
-    theta = math.acos(dz/dist) 
-    bpy.context.object.rotation_euler[1] = theta 
-    bpy.context.object.rotation_euler[2] = phi
     
-  #This will be for woodruff style pinning
-  #Does not work well.
-  '''
-  if bpy.context.scene.molprint.woodruff:
-    #pick a random long face from cylinder that was just made:
-    
-    bm = bmesh_copy_from_object(pin,transform=True,triangulate=False)
-    goodfaces =  []
-    for face in bm.faces:
-        edgelen = len(face.edges)
-        if edgelen < 5:
-            #gCenterMedian = pin.matrix_world * face.calc_center_median()
-            gCenterMedian = face.calc_center_median()
-            #gCenterMedian = face.normal
-            goodfaces.append((gCenterMedian,face.normal))
-    
-    placement = random.choice(goodfaces)
-    print(placement)
-    #place a cylinder at the center of that face
-    
-    bpy.ops.mesh.primitive_cube_add(location = placement[0])
-    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
-    wood = bpy.context.scene.objects.active
-    #bpy.ops.transform.resize( snap_normal=placement[1],value=(r/2,r/2,dist/2) )
-    wood.dimensions = cyldim/2
-    #bpy.ops.object.transform_apply( scale=True ) 
+  pin = bpy.context.scene.objects.active
+  cyldim = pin.dimensions
+  phi = math.atan2(dy, dx) 
+  theta = math.acos(dz/dist) 
+  bpy.context.object.rotation_euler[1] = theta 
+  bpy.context.object.rotation_euler[2] = phi
 
-    bpy.context.object.rotation_euler[1] = theta 
-    bpy.context.object.rotation_euler[2] = phi
-    
-    #Unionize them!
-    mymodifier = pin.modifiers.new('woodruff', 'BOOLEAN')
-    mymodifier.operation = 'UNION'
-    mymodifier.solver = 'CARVE'
-    mymodifier.object = wood
-    bpy.context.scene.objects.active = pin
-    bpy.ops.object.modifier_apply (modifier='woodruff')
-    bpy.context.scene.objects.unlink(wood)
-    '''   
 def bmesh_copy_from_object(obj, transform=True, triangulate=True, apply_modifiers=False):
 
     assert(obj.type == 'MESH')
@@ -419,6 +374,16 @@ def bool_carve(obj1,obj2,booltype,modapp=False):
         bpy.ops.object.modifier_apply (modifier='simpmod')
     #bpy.ops.object.modifier_apply (modifier='simpmod')
 
+def bool_bmesh(obj1,obj2,booltype,modapp=False):
+    mymod = obj1.modifiers.new('simpmod', 'BOOLEAN')
+    mymod.operation = booltype
+    mymod.solver = 'BMESH'
+    mymod.object = obj2
+    if modapp:
+        bpy.context.scene.objects.active = obj1
+        bpy.ops.object.modifier_apply (modifier='simpmod')
+    #bpy.ops.object.modifier_apply (modifier='simpmod')
+
 def radius_sort(tosort):
 #Create list that contains all objects by radius. Tosort is the list to sort from
     sortlist = [ob for ob in tosort]
@@ -540,15 +505,17 @@ def joinall():
         
                     
             bpy.ops.object.join()
-            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS') 
+            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+            mat = group[0].data.materials[0]
             newcube = intersect_pin(group[0])
+            newcube.data.materials.append(mat)
             difference_pin(newcube)
             
     if bpy.context.scene.molprint.multicolor:
         color_by_radius()
         
 def intersect_pin(ob):
-    print(ob)
+    #print(ob)
     start = time.time()
     pinlist = []
     bpy.ops.mesh.primitive_cube_add(location=(ob.location))
@@ -626,57 +593,57 @@ def select_glyco_na(context):
     '''Select glycosidic bond of nucleic acids.'''
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdict = Counter(elem[0] for elem in interaction_list)
-    #rads = (0.51,0.465,0.456)
-    #molprint = bpy.context.scene.molprint
     rads = (round(bpy.context.scene.molprint.carbon_radius,3),round(bpy.context.scene.molprint.nitrogen_radius,3),round(bpy.context.scene.molprint.oxygen_radius,3))
     for k, v in countdict.items():
         if v == 3 and k["radius"] == round(bpy.context.scene.molprint.carbon_radius,3):
-            #print('Sphere:',k)
-            #k.select = True
             #first get all cylinders connected, ignoring H-bonds
             cyls = [value[1] for value in interaction_list if value[0] == k and not value[1]["hbond"]]
-            #now get sphere,cylinders that are not the original
-            #print('Cylinders:',cyls)
             second = [each for each in interaction_list if each[0] != k and each[1] in cyls]
-            #iterate this new list, and confirm that
-            #print('Second spheres:',second)
             dist1 = get_distance(second[0][0],second[1][0])
             dist2 = get_distance(second[0][0],second[2][0])
             dist3 = get_distance(second[1][0],second[2][0])
             avgdist = dist1+dist2+dist3/3
-            #print('Distance:',avgdist)
             secondrads = (round(second[0][0]["radius"],3),round(second[1][0]["radius"],3),round(second[2][0]["radius"],3))
-            #print(rads,secondrads)
-            #print(avgdist)
             if rads == secondrads and avgdist > 5.56 and countdict.get(second[1][0]) > 1:
                 k.select = True
                 second[1][1].select = True
-'''
+
 #Meant for protein selection, not currently functional and maybe not even useful?
 def select_amides(context):
 
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdict = Counter(elem[0] for elem in interaction_list)
+    #print(countdict)
     #TODO: assign element variable to radius so this doesn't have to be hardcoded
-    rads = (0.51,0.465,0.456)
+    rads = (round(bpy.context.scene.molprint.carbon_radius,3),
+            round(bpy.context.scene.molprint.nitrogen_radius,3),
+            round(bpy.context.scene.molprint.oxygen_radius,3))
     for k, v in countdict.items():
-        if v == 3 and k["radius"] == 0.510:
-            print('Sphere:',k)
+        if v == 3 and k["radius"] == round(bpy.context.scene.molprint.carbon_radius,3):
             #first get all cylinders connected, ignoring H-bonds
+            #print(k)
             cyls = [value[1] for value in interaction_list if value[0] == k and value[1]["radius"] > bpy.context.scene.molprint.max_hbond]
+            if len(cyls) != 3:
+                continue
+            #print(cyls)
             #now get sphere,cylinders that are not the original
-            print('Cylinders:',cyls)
             second = [each for each in interaction_list if each[0] != k and each[1] in cyls]
-            #iterate this new list, and confirm that
-            print('Second spheres:',second)
-            secondrads = (second[0][0]["radius"],second[1][0]["radius"],second[2][0]["radius"])
-            #print(secondrads)
+            if len(second) != 3:
+                continue
+            #print(second)
+            secondrads = (round(second[0][0]["radius"],3),round(second[1][0]["radius"],3),round(second[2][0]["radius"],3))
+            rads = sorted(rads)
+            secondrads = sorted(secondrads)
+            print(rads,secondrads)
             if rads == secondrads:
+                #Select nitrogen to get its bond, but it is actually better to select our alpha
+                nitrogen = next(value for value in second if round(value[0]["radius"],3) == round(bpy.context.scene.molprint.nitrogen_radius,3))
+                alpha = next(value for value in second if round(value[0]["radius"],3) == round(bpy.context.scene.molprint.carbon_radius,3))
                 #need to differentiate backbone from Asn/Gln
-                if countdict.get(second[1][0]) > 1:                 
-                    second[0][0].select = True
-                    second[0][1].select = True
-'''
+                if countdict.get(nitrogen[0]) > 1:                 
+                    alpha[0].select = True
+                    alpha[1].select = True
+                    #k.select = True
 def floorall(context):
     '''Place largest convex hull face orthogonal to Z'''
     vec2 = (0,0,-1)
@@ -762,7 +729,7 @@ def check_split_cyls(obj1,obj2,splitcyllist):
 
 def merge_split_cyls(splitcyllist):
     #looked into doing this with bmesh, but wasn't as straightforward :(
-    print(splitcyllist)
+    #print(splitcyllist)
     for a,b in splitcyllist:
         #Some models can have odd organization that leads to failures. Try to fix with a quick check:
         try:
@@ -770,7 +737,7 @@ def merge_split_cyls(splitcyllist):
             b.data.materials.clear()
         except:
             continue
-        bpy.ops.object.select_all(action='DESELECT') 
+        bpy.ops.object.select_all(action='DESELECT')
         bpy.context.scene.objects.active = a
         a.select = True
         b.select = True
