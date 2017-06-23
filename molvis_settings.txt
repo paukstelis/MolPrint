@@ -16,11 +16,11 @@ hide everything, solvent
 represent b+s
 ~disp solvent
 setattr M ballScale 0.3
-setattr M stickScale 1.3
+setattr M stickScale 1.7
 bondcolor grey
 setattr p drawMode 1
 #these values are not likely the best, but they should be defined
-#or carbonyls have different radii
+#or carbonyls/keto oxygens have different radii
 vdwdefine 1.78 @o=
 vdwdefine 1.8 @n=
 vdwdefine 2.0 @c=

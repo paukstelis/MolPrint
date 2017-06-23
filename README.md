@@ -1,9 +1,13 @@
 # MolPrint
 
+Video introduction:
+https://youtu.be/0eEAlyHRbp4
+
 A Blender add-on that provides a variety of tools for processing molecular models for 3D printing.
 The main feature is the ability to "pin" ball-and-stick models to allow complicated molecular structures
 to be printed as independent pieces and assembled post-printing. This eliminates a significant amount of support material for 
 fused filament printing and enhances the educational value of models by allowing rotation around specific bonds.
+
 
 Additional features include:
 - Automated group coloring to visualize model splitting.
@@ -23,5 +27,4 @@ Additional features include:
 - Models are "floored" to the build plate
 - Models are exported as STL files for printing.
 
-Video introduction:
-https://youtu.be/0eEAlyHRbp4
+

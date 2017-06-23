@@ -266,7 +266,7 @@ class MolPrintSelectPhosphate(Operator):
         return {'FINISHED'}
 
 class MolPrintSelectAmide(Operator):
-    """Select all amide backbone groups"""
+    """Select all C-alpha backbone groups"""
     bl_idname = "mesh.molprint_selectamide"
     bl_label = "MolPrint Select Phosphate"
     @classmethod

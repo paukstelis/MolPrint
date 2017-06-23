@@ -171,15 +171,12 @@ class MolPrintSettings(PropertyGroup):
             precision=3,
             min=0.1, max=0.98,
             )            
-    cubepin = BoolProperty(
-            name="Square Pins",
-            description="Pin generation with cube/rectangles",
-            default=False,
-            )
-    woodruff = BoolProperty(
-            name="Woodruff Pins",
-            description="Pin generation with cube/rectangles",
-            default=False,
+    pinscale = FloatProperty(
+            name="Pinscale",
+            description="The amount to scale hole sizes over actual pin size",
+            default=1.05,
+            precision=3,
+            min=1.0, max=1.5,
             )
     interact = BoolProperty(
             name="Interaction list generated",

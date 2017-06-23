@@ -238,7 +238,7 @@ def isinside(obj1,obj2):
        
 def updategroups():
     '''Generates a list of connected spheres/cylinders that will be an independent object'''
-    start = time.time()
+    #start = time.time()
     #Reset grouplist
     grouplist = []
     bpy.context.scene.molprint_lists.grouplist = []
@@ -299,8 +299,8 @@ def updategroups():
             ob.data.materials.append(mat)
         m += 1
       
-    end = time.time()
-    print("Update group seconds:", end-start)
+    #end = time.time()
+    #print("Update group seconds:", end-start)
 
     
 def makeMaterial(name, diffuse):
@@ -403,7 +403,7 @@ def joinall():
     #Turn these off so it isn't constantly trying to update
     bpy.context.scene.molprint.interact = False
     bpy.context.scene.molprint.autogroup = False
-    start = time.time()
+    #start = time.time()
     #setup objects and pin pairs
     for ob in bpy.context.selected_objects:
         if ob.type == 'MESH' and ob["ptype"] == 'Cylinder':
@@ -445,7 +445,7 @@ def joinall():
         
         bool_carve(each[1],pin,'UNION',modapp=True)
         bpy.ops.object.select_all(action='DESELECT')
-    #TODO: After assembly, rename final objects group1, group2, etc. So export is nicer   
+    #TODO: Put each group into a thread to speed things up?   
     for group in bpy.context.scene.molprint_lists.grouplist:
         bpy.ops.object.select_all(action='DESELECT')
         pins = []
@@ -468,6 +468,7 @@ def joinall():
                 bpy.context.selected_objects[0]["pinlist"] = pins    
                 bpy.context.scene.objects.active = bpy.context.selected_objects[0]
                 bpy.ops.object.join()
+                #TODO: Put all object groups on same origin
                 bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
                 new_obs.append(bpy.context.selected_objects[0])
             
@@ -486,8 +487,7 @@ def joinall():
             #Difference pinning
             for sp in sphereobs:
                difference_pin(sp)
-               
-        
+
         #combine all pins objects for each group
         else:
             for obj in group:
@@ -495,15 +495,12 @@ def joinall():
                 obpin[:] = (value for value in obj["pinlist"] if value != 'None')
                 pins = pins+obpin
                 obj.select = True
-        
             #Make all objects of a group active and join    
             bpy.context.scene.objects.active = group[0]
             #Remove duplicates
             pins = list(set(pins))
             group[0]["pinlist"] = pins
             #print(pins)
-        
-                    
             bpy.ops.object.join()
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
             mat = group[0].data.materials[0]
@@ -516,7 +513,7 @@ def joinall():
         
 def intersect_pin(ob):
     #print(ob)
-    start = time.time()
+    #start = time.time()
     pinlist = []
     bpy.ops.mesh.primitive_cube_add(location=(ob.location))
     bpy.ops.transform.resize(value=(30, 30, 30))
@@ -529,17 +526,18 @@ def intersect_pin(ob):
     bpy.ops.object.select_all(action='DESELECT')
     ob.select = True
     bpy.ops.object.delete()       
-    end = time.time()
-    print("Intersect unionization time:",end-start)
+    #end = time.time()
+    #print("Intersect unionization time:",end-start)
     return cube
     
 def difference_pin(obj):
-    start = time.time()
+    pinscale = bpy.context.scene.molprint.pinscale
     if len(obj["pinlist"]) > 0:
         bpy.ops.object.select_all(action='DESELECT')
+        
         for pinname in obj["pinlist"]:
             pin = bpy.context.scene.objects[pinname]
-            pin.scale=((1.05,1.05,1.05))
+            pin.scale=((pinscale,pinscale,pinscale))
             pin.select = True
                 
         firstpin = bpy.context.scene.objects[obj["pinlist"][0]]
@@ -604,13 +602,14 @@ def select_glyco_na(context):
             dist3 = get_distance(second[1][0],second[2][0])
             avgdist = dist1+dist2+dist3/3
             secondrads = (round(second[0][0]["radius"],3),round(second[1][0]["radius"],3),round(second[2][0]["radius"],3))
+            #This is problematic. Works well with Pymol files, not as well with Chimera
             if rads == secondrads and avgdist > 5.56 and countdict.get(second[1][0]) > 1:
                 k.select = True
                 second[1][1].select = True
 
-#Meant for protein selection, not currently functional and maybe not even useful?
+#Meant for protein selection. Actually selects C-alphas.
 def select_amides(context):
-
+    '''Select alpha carbon (even though it say amide)'''
     interaction_list = bpy.context.scene.molprint_lists.interactionlist
     countdict = Counter(elem[0] for elem in interaction_list)
     #print(countdict)
@@ -634,7 +633,7 @@ def select_amides(context):
             secondrads = (round(second[0][0]["radius"],3),round(second[1][0]["radius"],3),round(second[2][0]["radius"],3))
             rads = sorted(rads)
             secondrads = sorted(secondrads)
-            print(rads,secondrads)
+            #print(rads,secondrads)
             if rads == secondrads:
                 #Select nitrogen to get its bond, but it is actually better to select our alpha
                 nitrogen = next(value for value in second if round(value[0]["radius"],3) == round(bpy.context.scene.molprint.nitrogen_radius,3))
@@ -644,6 +643,7 @@ def select_amides(context):
                     alpha[0].select = True
                     alpha[1].select = True
                     #k.select = True
+                    
 def floorall(context):
     '''Place largest convex hull face orthogonal to Z'''
     vec2 = (0,0,-1)
@@ -705,6 +705,7 @@ def align_vector(obj,vec1,vec2):
     obj.matrix_world = matrix_translation * matrix_rotate.to_4x4()
 
 def check_split_cyls(obj1,obj2,splitcyllist):
+    '''PyMol splits all cylinders. This joins them together'''
     bpy.ops.object.select_all(action='DESELECT') 
     bm1 = bmesh_copy_from_object(obj1, transform=True, triangulate=False)
     bm2 = bmesh_copy_from_object(obj2, transform=True, triangulate=False)
@@ -725,6 +726,8 @@ def check_split_cyls(obj1,obj2,splitcyllist):
                         matched = True
                         splitcyllist.append((obj1,obj2))
                         break
+    bm1.free()
+    bm2.free()
     return splitcyllist
 
 def merge_split_cyls(splitcyllist):
