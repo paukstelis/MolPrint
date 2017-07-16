@@ -454,6 +454,8 @@ def joinall():
             cylob = None
             new_obs = []
             multis = radius_sort(group)
+            origin_set=True
+            origin = None
             for each in multis:
                 pins = []
                 bpy.ops.object.select_all(action='DESELECT')
@@ -468,14 +470,20 @@ def joinall():
                 bpy.context.selected_objects[0]["pinlist"] = pins    
                 bpy.context.scene.objects.active = bpy.context.selected_objects[0]
                 bpy.ops.object.join()
-                #TODO: Put all object groups on same origin
-                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                #Put all object groups on same origin
+                if origin_set:
+                    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                    origin = bpy.context.selected_objects[0].location
+                    bpy.context.scene.cursor_location = origin
+                    origin_set = False
+                bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
                 new_obs.append(bpy.context.selected_objects[0])
             
             cylob = next(value for value in new_obs if value["ptype"] == 'Cylinder')  
             sphereobs = [value for value in new_obs if value["ptype"] == 'Sphere']
             #Difference sphere and cyls
-            print(cylob,sphereobs)
+            #TODO: Workout way to reverse this so spheres are differenced from cylinders, might print better
+            #print(cylob,sphereobs)
             for sp in sphereobs:
                 try:
                     bool_carve(cylob,sp,"DIFFERENCE",modapp=True)
@@ -484,7 +492,7 @@ def joinall():
             #Cylinder fixing
             newcube = intersect_pin(cylob)
             cylob = newcube
-            #Difference pinning
+            #Difference pinning 
             for sp in sphereobs:
                difference_pin(sp)
 
