@@ -372,7 +372,6 @@ def bool_carve(obj1,obj2,booltype,modapp=False):
     if modapp:
         bpy.context.scene.objects.active = obj1
         bpy.ops.object.modifier_apply (modifier='simpmod')
-    #bpy.ops.object.modifier_apply (modifier='simpmod')
 
 def bool_bmesh(obj1,obj2,booltype,modapp=False):
     mymod = obj1.modifiers.new('simpmod', 'BOOLEAN')
@@ -382,7 +381,6 @@ def bool_bmesh(obj1,obj2,booltype,modapp=False):
     if modapp:
         bpy.context.scene.objects.active = obj1
         bpy.ops.object.modifier_apply (modifier='simpmod')
-    #bpy.ops.object.modifier_apply (modifier='simpmod')
 
 def radius_sort(tosort):
 #Create list that contains all objects by radius. Tosort is the list to sort from
@@ -428,7 +426,7 @@ def joinall():
             pairs.remove(pair)
                    
     for each in pairs:
-        bool_carve(each[1],each[0],'DIFFERENCE',modapp=True)
+        bool_bmesh(each[1],each[0],'DIFFERENCE',modapp=True)
             
     pinlist = []
     oblist = []
@@ -443,7 +441,7 @@ def joinall():
         each[0]["pinlist"] += [pin.name]
         #union cylinder and pin if normal mode
         
-        bool_carve(each[1],pin,'UNION',modapp=True)
+        bool_bmesh(each[1],pin,'UNION',modapp=True)
         bpy.ops.object.select_all(action='DESELECT')
     #TODO: Put each group into a thread to speed things up?   
     for group in bpy.context.scene.molprint_lists.grouplist:
@@ -470,7 +468,7 @@ def joinall():
                 bpy.context.selected_objects[0]["pinlist"] = pins    
                 bpy.context.scene.objects.active = bpy.context.selected_objects[0]
                 bpy.ops.object.join()
-                #Put all object groups on same origin
+                #TODO: Put all object groups on same origin
                 if origin_set:
                     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
                     origin = bpy.context.selected_objects[0].location
@@ -482,17 +480,16 @@ def joinall():
             cylob = next(value for value in new_obs if value["ptype"] == 'Cylinder')  
             sphereobs = [value for value in new_obs if value["ptype"] == 'Sphere']
             #Difference sphere and cyls
-            #TODO: Workout way to reverse this so spheres are differenced from cylinders, might print better
             #print(cylob,sphereobs)
             for sp in sphereobs:
                 try:
-                    bool_carve(cylob,sp,"DIFFERENCE",modapp=True)
+                    bool_bmesh(cylob,sp,"DIFFERENCE",modapp=True)
                 except:
                     continue
             #Cylinder fixing
             newcube = intersect_pin(cylob)
             cylob = newcube
-            #Difference pinning 
+            #Difference pinning
             for sp in sphereobs:
                difference_pin(sp)
 
@@ -547,14 +544,21 @@ def difference_pin(obj):
             pin = bpy.context.scene.objects[pinname]
             pin.scale=((pinscale,pinscale,pinscale))
             pin.select = True
-                
-        firstpin = bpy.context.scene.objects[obj["pinlist"][0]]
-        bpy.context.scene.objects.active = firstpin
-        bpy.ops.object.join()           
-        bool_carve(obj,firstpin,'DIFFERENCE',modapp=True)
+        #turns out joining was not sufficient in some cases. Must unionize, or do some kind of intersection        
+        firstpin = bpy.context.scene.objects[obj["pinlist"][0]]    
+        bpy.context.scene.objects.active = firstpin        
+        bpy.ops.object.join()
+        #bpy.ops.mesh.primitive_cube_add(location=(firstpin.location))
+        #bpy.ops.transform.resize(value=(30, 30, 30))
+        #cube = bpy.context.selected_objects[0]
+        #bool_carve(cube,firstpin,'INTERSECT',modapp=True)           
+        #bool_bmesh(obj,cube,'DIFFERENCE',modapp=True)
+        bool_bmesh(obj,firstpin,'DIFFERENCE',modapp=True)
         bpy.ops.object.select_all(action='DESELECT')
         firstpin.select=True
         bpy.ops.object.delete()
+        #cube.select=True
+        #bpy.ops.object.delete()
 
 def select_hbonds():
     '''Selects cylinders below max_hbond as hydrogen bonds'''
@@ -714,6 +718,7 @@ def align_vector(obj,vec1,vec2):
 
 def check_split_cyls(obj1,obj2,splitcyllist):
     '''PyMol splits all cylinders. This joins them together'''
+    #print(obj1,obj2)
     bpy.ops.object.select_all(action='DESELECT') 
     bm1 = bmesh_copy_from_object(obj1, transform=True, triangulate=False)
     bm2 = bmesh_copy_from_object(obj2, transform=True, triangulate=False)
@@ -730,12 +735,16 @@ def check_split_cyls(obj1,obj2,splitcyllist):
                     fnorm2 = (f2.normal * obj2.matrix_world).to_tuple(3)
                     #convert these to a tuple to allow comparision without rounding issues of vectors
                     #only need one check. For chimera, needed to drop precision down to 3
+                    #tolerance = (f1.calc_center_median() - f2.calc_center_median()).length
+                    #print(tolerance)
+                    #print(fnorm1,fnorm2)
                     if tol(f1.calc_center_median(),f2.calc_center_median()) and fnorm1[1] == fnorm2[1]:
                         matched = True
                         splitcyllist.append((obj1,obj2))
                         break
     bm1.free()
     bm2.free()
+    #print (splitcyllist)
     return splitcyllist
 
 def merge_split_cyls(splitcyllist):
@@ -754,7 +763,7 @@ def merge_split_cyls(splitcyllist):
         b.select = True
         bpy.ops.object.join()
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.remove_doubles()
+        bpy.ops.mesh.remove_doubles(threshold=0.001, use_unselected=True)
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.mesh.select_interior_faces()
         bpy.ops.mesh.delete(type='FACE')

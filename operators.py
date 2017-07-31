@@ -115,7 +115,7 @@ class MolPrintClean(Operator):
                 delete_list.append(b)
                 continue
             #Clyinder check for 'split' cylinder bonds
-            if a['ptype'] and b['ptype'] == 'Cylinder' and distance < 1.0:
+            if a['ptype'] and b['ptype'] == 'Cylinder' and distance < 2:
                 splitcyllist = mesh_helpers.check_split_cyls(a,b,splitcyllist)    
         #Delete everything that is in the delete list if it still exists
         #TODO: Make this more pythonic             
