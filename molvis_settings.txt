@@ -27,3 +27,13 @@ vdwdefine 2.0 @c=
 
 #Jmol stopped using cyl/spheres for VRML in 14.6.4
 #Must use older versions
+
+//JSMol-JMol as found on CCDC Website
+//Alternate conformations will need to be removed
+set bondRadiusMilliAngstroms 300 //Adjust bond radius as you see fit
+set showMultipleBonds OFF        //No easy way to do greater than single bonds now
+select all
+spacefill 30%                    //Set sphere size, generally between 25-30% for good printing
+color BONDS [1,1,1]              //Color all bonds one color for simplicity
+select none
+write vrml for_molprint.wrl        //Write a wrl file

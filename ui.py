@@ -43,7 +43,7 @@ class MolPrintToolBar1(MolPrintToolBar,Panel):
 
         row = layout.row()
         rowsub = layout.row(align=True)
-        rowsub.operator("import_scene.x3d_extra", text="Import VRLM")
+        rowsub.operator("import_scene.x3d_extra", text="Import VRML")
         rowsub = layout.row(align=True)
         rowsub.label("Primitive divisions")
         rowsub.prop(molprint, "prim_detail", text="")
