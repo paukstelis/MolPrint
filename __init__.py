@@ -140,6 +140,11 @@ class MolPrintSettings(PropertyGroup):
             description="Autogroup and color on the fly, may be slow with many objects",
             default=True,
             )
+    splitpins = BoolProperty(
+            name="Split Pins",
+            description="Split pins with conic heads",
+            default=False,
+            )
     autocolor = BoolProperty(
             name="Color Groups",
             description="Autocoloring,requires autogrouping",
