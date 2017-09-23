@@ -96,8 +96,14 @@ class MolPrintClean(Operator):
         splitcyllist = []
         #Remove all non-mesh objects first so they are out of the way
         for obj in bpy.context.scene.objects:
+            obj["conelist"] = ['None']
+            obj["cutcube"] = ['None']
+            obj["pinlist"] = ['None']
+            obj["hbond"] = 0
+             
             if obj.type != 'MESH':
                 bpy.context.scene.objects.unlink(obj)
+
         #Make all linked objects single user: Jmol issue
         bpy.ops.object.make_single_user(type='ALL',object=True,obdata=True)
         #Generate a list of pairs of existing objects to do comparisons against
@@ -152,11 +158,6 @@ class MolPrintGetInteractions(Operator):
     #Uses a 2 unit distance cutoff. This may impact long generated struts?
         objlist = itertools.combinations(bpy.context.scene.objects, 2)
         for each in objlist:
-            #Give each object pinlist property that will modified later
-            each[0]["pinlist"] = ['None']
-            each[1]["pinlist"] = ['None']
-            each[0]["hbond"] = 0
-            each[1]["hbond"] = 0
             #Ignore cylinder-cylinder interactions
             if (each[0]["ptype"] == 'Cylinder') and (each[1]["ptype"] == 'Cylinder'):
                 continue
