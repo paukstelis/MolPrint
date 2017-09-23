@@ -1,10 +1,12 @@
 #Some ball-and-stick settings for PyMol
-set stick_radius, 0.3
+set stick_radius, 0.35
 set sphere_scale, 0.3
 set dash_gap, 0.0
 set dash_radius, 0.2
 set dash_color, white
 set h_bond_max_angle, 25.0
+set stick_color white
+set valence, off
 remove not (alt ''+A)
 alter all, alt=''
 hide everything
@@ -19,8 +21,7 @@ setattr M ballScale 0.3
 setattr M stickScale 1.7
 bondcolor grey
 setattr p drawMode 1
-#these values are not likely the best, but they should be defined
-#or carbonyls/keto oxygens have different radii
+#define or carbonyls/keto oxygens have different radii
 vdwdefine 1.78 @o=
 vdwdefine 1.8 @n=
 vdwdefine 2.0 @c=
