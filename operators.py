@@ -327,9 +327,9 @@ class MolPrintFloorSelected(Operator):
         hullobj = bpy.context.scene.objects.active
         hullobj.name = 'temphull'
         bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.convex_hull(delete_unused=True,use_existing_faces=False)
         bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.dissolve_limited()
+        bpy.ops.mesh.convex_hull(delete_unused=True,use_existing_faces=False)
+        #bpy.ops.mesh.dissolve_limited()
         bpy.ops.mesh.select_mode(type="FACE")
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.context.scene.molprint.floorselect = True
