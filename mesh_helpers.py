@@ -75,7 +75,9 @@ def makestrut(obj1,obj2):
     strut["radius"] = strut_radius
     strut["hbond"] = True
     strut["pinlist"] = ["None"]
-    
+    strut["cutcube"] = ['None']
+    strut["cone"] = ['None']
+    strut["conelist"] = ['None']
     #Go ahead and update interaction list now
     if len(interactionlist) > 2:
         interactionlist.append((obj1,strut))
