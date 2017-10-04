@@ -596,11 +596,11 @@ def joinall():
             newcube.data.materials.append(mat)
             #Do these if we are doing split pins
             if bpy.context.scene.molprint.splitpins:
-                difference_pin(newcube,newcube["pinlist"],doscale=False)
+                difference_pin(newcube,newcube["pinlist"],doscale=False,carve=True)
                 difference_pin(newcube,newcube["conelist"])
                 difference_pin(newcube,newcube["cutcube"],doscale=False,carve=True)
             else:
-                difference_pin(newcube,newcube["pinlist"])
+                difference_pin(newcube,newcube["pinlist"],carve=True)
             clean_object()    
     if bpy.context.scene.molprint.multicolor:
         color_by_radius()
