@@ -535,13 +535,14 @@ def joinall():
                 bpy.context.selected_objects[0]["cutcube"] = cutcubes    
                 bpy.context.scene.objects.active = bpy.context.selected_objects[0]
                 bpy.ops.object.join()
+                
                 if origin_set:
                     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
                     origin = bpy.context.selected_objects[0].location
                     bpy.context.scene.cursor_location = origin
                     origin_set = False
 
-                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
                 new_obs.append(bpy.context.selected_objects[0])
             
             cylob = next(value for value in new_obs if value["ptype"] == 'Cylinder')  
