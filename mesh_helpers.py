@@ -290,17 +290,11 @@ def updategroups():
     #This is redundant with registered function in __init__
     if not bpy.context.scene.molprint.interact:
         return
-        
+    #Sadly, must do this every time to avoid errors arising from undo
+    bpy.ops.mesh.molprint_objinteract()    
     grouplist = []
     bpy.context.scene.molprint_lists.grouplist = []
-    il = bpy.context.scene.molprint_lists.interactionlist
-    interaction_list = []
-    #repopulate name lists to object list
-    for each in il:
-        pair = []
-        for name in each:
-            pair.append(bpy.data.objects[name])
-        interaction_list.append(pair)
+    interaction_list = bpy.context.scene.molprint_lists.interactionlist
    
     #Run for each object that is selected in scene
     for each in (bpy.context.selected_objects):

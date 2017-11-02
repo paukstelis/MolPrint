@@ -252,6 +252,7 @@ class printerpreferences(bpy.types.AddonPreferences):
 
 class MolPrintLists():
     interactionlist = []
+    internames = []
     grouplist = []
     selectedlist = []
     floorlist = []
@@ -270,7 +271,7 @@ def updategroups(scene):
 @persistent
 def populatelists(scene):
     if not bpy.context.scene.molprint.joined:
-        bpy.context.scene.molprint.cleaned=True 
+        bpy.context.scene.molprint.cleaned=True
         bpy.ops.mesh.molprint_updategroups()
         
 classes = (
@@ -285,6 +286,7 @@ classes = (
     operators.ImportX3DE,
     operators.MolPrintClean,
     operators.MolPrintGetInteractions,
+    operators.MolPrintObjInteract,
     operators.MolPrintAddStrut,
     operators.MolPrintScaleBonds,
     operators.MolPrintUpdateGroups,

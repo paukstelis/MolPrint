@@ -178,11 +178,27 @@ class MolPrintGetInteractions(Operator):
         
     def execute(self, context):
         ial = self.getinteractions(context)
-        bpy.context.scene.molprint_lists.interactionlist = ial
+        bpy.context.scene.molprint_lists.internames = ial
+        bpy.ops.mesh.molprint_objinteract()
         bpy.context.scene.molprint.interact = True
         bpy.context.scene.molprint_lists.selectedlist = bpy.context.selected_objects
         return {'FINISHED'}
-
+        
+class MolPrintObjInteract(Operator):
+    """Make a name list into an object list"""
+    bl_idname = "mesh.molprint_objinteract"
+    bl_label = "Convert name list to object list"
+    def execute(self, context):
+        interaction_list = []
+       
+        for each in bpy.context.scene.molprint_lists.internames:
+            pair = []
+            for name in each:
+                pair.append(bpy.data.objects[name])
+            interaction_list.append(pair)
+        bpy.context.scene.molprint_lists.interactionlist = interaction_list
+        return {'FINISHED'}
+            
 class MolPrintAddStrut(Operator):
     """Add a strut between two selected spheres"""
     bl_idname = "mesh.molprint_addstrut"
