@@ -120,7 +120,8 @@ class MolPrintToolBar4(MolPrintToolBar,Panel):
         scene = context.scene
         molprint = scene.molprint
         obj = context.object
-        
+        #rowsub = layout.row(align=True)
+        #rowsub.operator("mesh.molprint_updategroups", text="Update Groups")
         row = layout.row()
         rowsub = layout.row(align=True)
         rowsub.prop(molprint,"autogroup")
