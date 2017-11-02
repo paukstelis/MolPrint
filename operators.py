@@ -127,7 +127,9 @@ class MolPrintClean(Operator):
         #TODO: Make this more pythonic             
         for each in delete_list:
             try:
-                bpy.context.scene.objects.unlink(each)
+                bpy.ops.object.select_all(action='DESELECT')
+                each.select = True
+                bpy.ops.object.delete() 
             except:
                 continue
         #Join split cylinders if they exist        
@@ -135,15 +137,16 @@ class MolPrintClean(Operator):
             mesh_helpers.merge_split_cyls(splitcyllist)
             
         bpy.context.scene.molprint.cleaned = True
-        bpy.ops.mesh.molprint_interactions()
         bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.mesh.molprint_interactions()
+        
         return {'FINISHED'}
                     
 class MolPrintGetInteractions(Operator):
     """Generate Interaction List for Objects"""
     bl_idname = "mesh.molprint_interactions"
     bl_label = "Find Interactions"
-
+    bl_options = {'PRESET', 'UNDO'}
     @classmethod
     def poll(cls, context):
         if bpy.context.scene.molprint.cleaned:
@@ -167,9 +170,9 @@ class MolPrintGetInteractions(Operator):
                 intersect = mesh_helpers.bmesh_check_intersect_objects(each[0], each[1])
             if intersect:
                 if each[0]["ptype"] == 'Sphere':
-                    interactionlist.append((each[0],each[1]))
+                    interactionlist.append([each[0].name,each[1].name])
                 if each[0]["ptype"] == 'Cylinder':
-                    interactionlist.append((each[1],each[0]))     
+                    interactionlist.append([each[1].name,each[0].name])     
                 
         return interactionlist
         
@@ -184,7 +187,7 @@ class MolPrintAddStrut(Operator):
     """Add a strut between two selected spheres"""
     bl_idname = "mesh.molprint_addstrut"
     bl_label = "MolPrint Add Strut"
-    
+    bl_options = {'UNDO'}
     @classmethod
     def poll(cls, context):
         selected = bpy.context.selected_objects
@@ -202,7 +205,7 @@ class MolPrintScaleBonds(Operator):
     """Scale Cylinder dimensions"""
     bl_idname = "mesh.molprint_scalebonds"
     bl_label = "MolPrint Scale Bonds"
-    
+    bl_options = {'PRESET', 'UNDO'}
     @classmethod
     def poll(cls, context):
         if bpy.context.scene.molprint.interact:
@@ -241,6 +244,7 @@ class MolPrintPinJoin(Operator):
     """Pin and Join selected groups together"""
     bl_idname = "mesh.molprint_pinjoin"
     bl_label = "MolPrint Pin and Join"
+    bl_options = {'PRESET', 'UNDO'}
     @classmethod
     def poll(cls, context):
         if len(bpy.context.scene.molprint_lists.grouplist) > 0:
@@ -366,7 +370,7 @@ class MolPrintExportAll(Operator):
     bl_label = "MolPrint export all"
     @classmethod
     def poll(cls, context):
-        return True if bpy.context.scene.molprint.joined else False
+        return True if bpy.context.scene.molprint.cleaned else False
 
     def execute(self, context):
         mesh_helpers.addon_ensure("object_print3d_utils")
