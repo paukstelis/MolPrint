@@ -286,10 +286,22 @@ def isinside(obj1,obj2):
 def updategroups():
     '''Generates a list of connected spheres/cylinders that will be an independent object'''
     #start = time.time()
-    #Reset grouplist
+    #Ignore if scene is not yet cleaned/interacted
+    #This is redundant with registered function in __init__
+    if not bpy.context.scene.molprint.interact:
+        return
+        
     grouplist = []
     bpy.context.scene.molprint_lists.grouplist = []
-    interaction_list = bpy.context.scene.molprint_lists.interactionlist
+    il = bpy.context.scene.molprint_lists.interactionlist
+    interaction_list = []
+    #repopulate name lists to object list
+    for each in il:
+        pair = []
+        for name in each:
+            pair.append(bpy.data.objects[name])
+        interaction_list.append(pair)
+   
     #Run for each object that is selected in scene
     for each in (bpy.context.selected_objects):
         group = []
@@ -385,7 +397,8 @@ def color_by_radius():
             ob.data.materials.clear()
             ob.data.materials.append(mat)
         m += 1
-            
+
+#No longer used.            
 def getinteractions():
     '''Build a complete list of interactions between objects to speed up joining'''
     objlist = itertools.combinations(bpy.context.scene.objects, 2)
