@@ -265,8 +265,14 @@ def updategroups(scene):
             bpy.context.scene.molprint_lists.selectedlist = bpy.context.selected_objects
             #print("Do some group update")
             bpy.ops.mesh.molprint_updategroups()
-    return 
+    return
     
+@persistent
+def populatelists(scene):
+    if not bpy.context.scene.molprint.joined:
+        bpy.context.scene.molprint.cleaned=True 
+        bpy.ops.mesh.molprint_updategroups()
+        
 classes = (
     ui.MolPrintToolBar1,
     ui.MolPrintToolBar2,
@@ -303,6 +309,7 @@ def register():
     bpy.types.Scene.molprint = PointerProperty(type=MolPrintSettings)
     bpy.types.Scene.molprint_lists = MolPrintLists()
     bpy.app.handlers.scene_update_post.append(updategroups)
+    bpy.app.handlers.load_post.append(populatelists)
         
 def unregister():
     for cls in classes:
@@ -311,4 +318,4 @@ def unregister():
     del bpy.types.Scene.molprint
     del bpy.types.Scene.molprint_lists
     bpy.app.handlers.scene_update_post.remove(updategroups)
-
+    bpy.app.handlers.load_post.append(populatelists)
