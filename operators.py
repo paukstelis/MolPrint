@@ -100,6 +100,7 @@ class MolPrintClean(Operator):
             obj["cutcube"] = ['None']
             obj["pinlist"] = ['None']
             obj["hbond"] = 0
+            obj["pin"] = [{"atom" : 'None',"pindiameter" : 0.66,"pintype" : 1}] 
              
             if obj.type != 'MESH':
                 bpy.context.scene.objects.unlink(obj)
@@ -178,7 +179,7 @@ class MolPrintGetInteractions(Operator):
         
     def execute(self, context):
         ial = self.getinteractions(context)
-        bpy.context.scene.molprint_lists.internames = ial
+        bpy.context.scene.molprint_lists.internames["pairs"] = ial
         bpy.ops.mesh.molprint_objinteract()
         bpy.context.scene.molprint.interact = True
         bpy.context.scene.molprint_lists.selectedlist = bpy.context.selected_objects
@@ -191,7 +192,7 @@ class MolPrintObjInteract(Operator):
     def execute(self, context):
         interaction_list = []
        
-        for each in bpy.context.scene.molprint_lists.internames:
+        for each in bpy.context.scene.molprint_lists.internames["pairs"]:
             pair = []
             for name in each:
                 pair.append(bpy.data.objects[name])
@@ -474,4 +475,26 @@ class MolPrintCPKSplit(Operator):
             bpy.ops.object.delete()
             
         print("CPK: ", time.time()-starttime)
+        return {'FINISHED'}
+        
+class MolPrintSetPinGroup(Operator):
+    """Define a group of pins from currently selected objects"""
+    bl_idname = "mesh.molprint_setpingroup"
+    bl_label = "MolPrint set pin groups"
+    @classmethod
+    def poll(cls, context):
+        return True if bpy.context.scene.molprint.cleaned else False
+
+    def execute(self, context):
+        pingroups = bpy.context.scene.molprint_lists.pingroups
+        pinset = {}
+        pinset["type"] = 0
+        if bpy.context.scene.molprint.splitpins:
+            pinset["type"] = 1
+        pinset["pairs"] = mesh_helpers.getpairs()
+        pinset["diameter"] = bpy.context.scene.molprint.pintobond
+        pinset["sides"] = bpy.context.scene.molprint.pin_sides
+        pingroups.append(pinset)
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.scene.molprint.splitpins = False
         return {'FINISHED'}     

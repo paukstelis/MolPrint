@@ -251,8 +251,11 @@ class printerpreferences(bpy.types.AddonPreferences):
         col.prop(self, "category", text="")
 
 class MolPrintLists():
+    pingroups = []
     interactionlist = []
-    internames = []
+    splitlist = {"conelist" : [], "cutcube" : []}
+    internames = {"name": 'intername', "pairs" : []}
+    pinlist = {"pinlist" : []}
     grouplist = []
     selectedlist = []
     floorlist = []
@@ -270,10 +273,35 @@ def updategroups(scene):
     
 @persistent
 def populatelists(scene):
-    if not bpy.context.scene.molprint.joined:
-        bpy.context.scene.molprint.cleaned=True
-        bpy.ops.mesh.molprint_updategroups()
         
+    if bpy.context.scene.molprint.cleaned:
+        import json
+        try:
+            text_obj = bpy.data.texts['interactions.json']
+            text_str = text_obj.as_string()
+            bpy.context.scene.molprint_lists.internames = json.loads(text_str)
+        except:
+            print("No previous interactions found")
+        
+        try:
+            text_obj = bpy.data.texts['pingroup.json']
+            text_str = text_obj.as_string()
+            bpy.context.scene.molprint_lists.pingroups = json.loads(text_str)
+        except:
+            print("No previous pin groups found")
+        
+        bpy.ops.mesh.molprint_updategroups()
+
+@persistent
+def savelists(scene):
+    import json
+    i = json.dumps(bpy.context.scene.molprint_lists.internames, sort_keys=True, indent=2)
+    text_block = bpy.data.texts.new('interactions.json')
+    text_block.from_string(i)
+    p = json.dumps(bpy.context.scene.molprint_lists.pingroups, sort_keys=True, indent=2)
+    text_block = bpy.data.texts.new('pingroup.json')
+    text_block.from_string(p)       
+
 classes = (
     ui.MolPrintToolBar1,
     ui.MolPrintToolBar2,
@@ -300,6 +328,7 @@ classes = (
     operators.MolPrintApplyFloor,
     operators.MolPrintExportAll,
     operators.MolPrintCPKSplit,
+    operators.MolPrintSetPinGroup,
     MolPrintSettings,
     printerpreferences,
     )
@@ -312,6 +341,7 @@ def register():
     bpy.types.Scene.molprint_lists = MolPrintLists()
     bpy.app.handlers.scene_update_post.append(updategroups)
     bpy.app.handlers.load_post.append(populatelists)
+    bpy.app.handlers.save_pre.append(savelists)
         
 def unregister():
     for cls in classes:
@@ -321,3 +351,4 @@ def unregister():
     del bpy.types.Scene.molprint_lists
     bpy.app.handlers.scene_update_post.remove(updategroups)
     bpy.app.handlers.load_post.append(populatelists)
+    bpy.app.handlers.save_pre.append(savelists)

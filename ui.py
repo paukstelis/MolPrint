@@ -155,17 +155,22 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.label("Pin:bond diameter")
         rowsub.prop(molprint, "pintobond", text="")
+        '''
         rowsub = layout.row(align=True)
         rowsub.label("H-bond pin sides")
         rowsub.prop(molprint, "h_pin_sides", text="")
         rowsub = layout.row(align=True)
         rowsub.label("H-bond pin:bond")
         rowsub.prop(molprint, "h_pintobond", text="")
+        '''
         rowsub = layout.row(align=True)
         rowsub.label("Hole size increase")
         rowsub.prop(molprint, "pinscale", text="")
         rowsub = layout.row(align=True)
         rowsub.prop(molprint,"splitpins")
+        rowsub = layout.row(align=True)
+        rowsub.operator("mesh.molprint_setpingroup", text="Set Pin Group")
+        
         rowsub = layout.row(align=True)
         rowsub.prop(molprint,"multicolor")
         rowsub = layout.row(align=True)
