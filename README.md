@@ -1,7 +1,14 @@
 # MolPrint
 
+Manuscript describing this addon:
+http://pubs.acs.org/doi/10.1021/acs.jchemed.7b00549
+
 Video introduction:
 https://youtu.be/0eEAlyHRbp4
+
+Installation video:
+https://www.youtube.com/watch?v=Q-G432sxdJ0
+
 
 A Blender add-on that provides a variety of tools for processing molecular models for 3D printing.
 The main feature is the ability to "pin" ball-and-stick models to allow complicated molecular structures
