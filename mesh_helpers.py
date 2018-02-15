@@ -134,7 +134,7 @@ def cylinder_between(pair):
     bpy.ops.mesh.primitive_cylinder_add(
         vertices = bpy.context.scene.molprint.pin_sides,
         radius = r, 
-        depth = dist,
+        depth = dist-r,
         location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)
     )
     pin = bpy.context.scene.objects.active
