@@ -133,6 +133,8 @@ class MolPrintClean(Operator):
                 bpy.ops.object.delete() 
             except:
                 continue
+        
+        #This is causing unexpected issues. Removing for now
         #Join split cylinders if they exist        
         #if len(splitcyllist) > 0:
         #    mesh_helpers.merge_split_cyls(splitcyllist)
