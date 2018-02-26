@@ -134,10 +134,12 @@ class MolPrintClean(Operator):
             except:
                 continue
         #Join split cylinders if they exist        
-        if len(splitcyllist) > 0:
-            mesh_helpers.merge_split_cyls(splitcyllist)
+        #if len(splitcyllist) > 0:
+        #    mesh_helpers.merge_split_cyls(splitcyllist)
             
         bpy.context.scene.molprint.cleaned = True
+        #reset any pin groups
+        bpy.context.scene.molprint_lists.pingroups = []
         bpy.ops.object.select_all(action='DESELECT')
         bpy.ops.mesh.molprint_interactions()
         
@@ -264,7 +266,7 @@ class MolPrintPinJoin(Operator):
     bl_options = {'PRESET', 'UNDO'}
     @classmethod
     def poll(cls, context):
-        if len(bpy.context.scene.molprint_lists.grouplist) > 0:
+        if len(bpy.context.scene.molprint_lists.pingroups) > 0:
             return True
         else:
             return False
@@ -496,5 +498,54 @@ class MolPrintSetPinGroup(Operator):
         pinset["sides"] = bpy.context.scene.molprint.pin_sides
         pingroups.append(pinset)
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.molprint.splitpins = False
+        return {'FINISHED'} 
+        
+class MolPrintMakeDouble(Operator):
+    """Create Double Bonds from selected cylinders"""
+    bl_idname = "mesh.molprint_makedouble"
+    bl_label = "MolPrint make cylinders double bonds"
+
+    def execute(self, context):
+        from mathutils import Euler,Vector,Matrix
+        #Turn off any autogrouping first
+        auto = bpy.context.scene.molprint.autogroup
+        autostate = False
+        if auto:
+            auto = False
+            autostate = True
+        doubles = [value for value in bpy.context.selected_objects]
+        double_scale = bpy.context.scene.molprint.double_scale
+        double_distance = bpy.context.scene.molprint.double_distance
+        for each in doubles:
+        #make sure they are Cylinders
+            if each["ptype"] == "Cylinder":
+                
+                trans_local_plus = Vector(((each["radius"]/double_distance),0.0,0.0))
+                trans_local_minus = Vector((-(each["radius"]/double_distance),0.0,0.0))
+                
+
+                trans_world_plus = each.matrix_world.to_3x3() * trans_local_plus
+                trans_world_minus = each.matrix_world.to_3x3() * trans_local_minus
+                newbond = each.copy()
+                newbond.data = each.data.copy()
+                bpy.context.scene.objects.link(newbond)
+                
+                each.matrix_world.translation += trans_world_plus
+                newbond.matrix_world.translation += trans_world_minus
+                each.scale = (double_scale,1,double_scale)
+                newbond.scale = (double_scale,1,double_scale)
+                
+                #Unionize. Takes longer than join, but might be safer?
+                mesh_helpers.bool_carve(each,newbond,'UNION',modapp=True)
+                bpy.ops.object.select_all(action='DESELECT')
+                each.select = True                
+                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                #each.rotation_euler = rot
+                each.select = False
+                newbond.select = True
+                bpy.ops.object.delete()
+                each.select = True
+        if autostate:
+            auto = True
+            
         return {'FINISHED'}     

@@ -141,6 +141,9 @@ def cylinder_between(pair,pintype=0,ptb=0.0,sides=0):
         bpy.context.object.rotation_euler[2] = phi
   
     r = pair[1]["radius"]*ptb
+    
+    #dist = dist - r
+    
     bpy.ops.mesh.primitive_cylinder_add(
         vertices = sides,
         radius = r, 
@@ -148,6 +151,7 @@ def cylinder_between(pair,pintype=0,ptb=0.0,sides=0):
         location = (dx/2 + x1, dy/2 + y1, dz/2 + z1)
     )
     pin = bpy.context.scene.objects.active
+    
     bpy.context.object.rotation_euler[1] = theta 
     bpy.context.object.rotation_euler[2] = phi
     
@@ -372,7 +376,6 @@ def updategroups():
       
     #end = time.time()
     #print("Update group seconds:", end-start)
-
     
 def makeMaterial(name, diffuse):
     mat = bpy.data.materials.new(name)
@@ -383,7 +386,7 @@ def makeMaterial(name, diffuse):
 
 def material_colors(thelist):
     color_num = 0
-    i = 1.0
+    i = 1
     colors = []
     toggle_r = itertools.cycle([0,0.25,0.5,0.75,1])
     toggle_g = itertools.cycle([1.0, 0.66, 0.33, 0])
@@ -409,8 +412,6 @@ def color_by_radius():
             ob.data.materials.clear()
             ob.data.materials.append(mat)
         m += 1
-
-
 
 def bool_carve(obj1,obj2,booltype,modapp=False):
     mymod = obj1.modifiers.new('simpmod', 'BOOLEAN')
@@ -522,24 +523,25 @@ def joinall():
             multis = radius_sort(group)
             origin_set=True
             origin = None
-            '''
+
             for each in multis:
-                pins = []
-                cones = []
-                cutcubes = []
+            #this is still working the old way with object lists as properties of the joined objects
+                allpins = bpy.context.scene.molprint_lists.pinlist["pinlist"]
+                allcones = bpy.context.scene.molprint_lists.splitlist["conelist"]
+                allcuts = bpy.context.scene.molprint_lists.splitlist["cutcube"]
                 bpy.ops.object.select_all(action='DESELECT')
                 
-                for ob in each:
-                    obpin = []
-                    obcone = []
-                    obcut = []
-                    obpin[:] = (value for value in ob["pinlist"] if value != 'None')
-                    obcone[:] = (value for value in ob["conelist"] if value != 'None')
-                    obcut[:] = (value for value in ob["cutcube"] if value != 'None')
-                    ob.select = True
-                    pins = pins+obpin
-                    cones = cones+obcone
-                    cutcubes = cutcubes+obcut
+                for obj in each:
+                    p=[]
+                    p[:] = (b for a,b in allpins if a == obj.name)
+                    pins = pins+p
+                    c=[]
+                    c[:] = (b for a,b in allcones if a == obj.name)
+                    cones = cones+c
+                    cc=[]
+                    cc[:] = (b for a,b in allcuts if a == obj.name)
+                    cutcubes = cutcubes+cc
+                    obj.select = True
 
                 pins = list(set(pins))
                 cones = list(set(cones))
@@ -571,14 +573,14 @@ def joinall():
             newcube = intersect_pin(cylob)
             cylob = newcube
             #Difference pinning
-            if bpy.context.scene.molprint.splitpins:
-                difference_pin(sp,sp["pinlist"],doscale=False)
+            if len(cutcubes) > 0 or len(cones) > 0:
+                difference_pin(sp,sp["pinlist"],doscale=False,carve=True)
                 difference_pin(sp,sp["conelist"])
-                difference_pin(cylob,cylob["cutcube"],doscale=False,carve=True)
+                difference_pin(cylob,cylobs["cutcube"],doscale=False,carve=True)
             else:
                 for sp in sphereobs:
-                    difference_pin(sp,sp["pinlist"])
-        '''
+                    difference_pin(sp,sp["pinlist"],carve=True)
+
         #combine all pins objects for each group
         else:
             allpins = bpy.context.scene.molprint_lists.pinlist["pinlist"]
@@ -654,24 +656,48 @@ def difference_pin(obj,thelist,doscale=True,carve=False):
     pinscale = bpy.context.scene.molprint.pinscale
     if len(thelist) > 0:
         bpy.ops.object.select_all(action='DESELECT')
-        
-       
         for pinname in thelist:
-            pin = bpy.context.scene.objects[pinname]
+            try:
+                pin = bpy.context.scene.objects[pinname]
+            except:
+                print("Pin not found")
+                continue
             if doscale:
                 pin.scale=((pinscale,pinscale,pinscale))
             pin.select = True
-                
-        firstpin = bpy.context.scene.objects[thelist[0]]
-        bpy.context.scene.objects.active = firstpin
-        bpy.ops.object.join()
-        if carve:           
-            bool_carve(obj,firstpin,'DIFFERENCE',modapp=True)
-        else:
-            bool_bmesh(obj,firstpin,'DIFFERENCE',modapp=True)
-        bpy.ops.object.select_all(action='DESELECT')
-        firstpin.select=True
-        bpy.ops.object.delete()
+    
+    else:
+        return
+    
+    if len(thelist) == 1:
+    	try:
+    		firstpin = bpy.context.scene.objects[thelist[0]]
+    		bpy.context.scene.objects.active = firstpin
+    	except:
+    		return
+    else:
+        gotfirst = True
+        i = 0
+        while gotfirst:
+            try:        
+                firstpin = bpy.context.scene.objects[thelist[i]]
+                gotfirst = False
+                bpy.context.scene.objects.active = firstpin
+                bpy.ops.object.join()
+            except:
+                print("First pin not found....continuing")
+                i = i+1
+                if i > len(thelist):
+                	return
+                continue
+        
+    if carve:           
+        bool_carve(obj,firstpin,'DIFFERENCE',modapp=True)
+    else:
+        bool_bmesh(obj,firstpin,'DIFFERENCE',modapp=True)
+    bpy.ops.object.select_all(action='DESELECT')
+    firstpin.select=True
+    bpy.ops.object.delete()
 
 def select_hbonds():
     '''Selects cylinders below max_hbond as hydrogen bonds'''
@@ -947,6 +973,19 @@ def make_cpkcyl(dx,dy,dz,dummy1,dummy2,diam,obj,align):
     mymodifier.operation = 'DIFFERENCE'
     mymodifier.solver = 'CARVE'
     mymodifier.object = cylinder
+
+def makedouble():
+    '''Make double bonds from cylinders'''
+    for each in bpy.context.selected_objects:
+        #make sure they are Cylinders
+        if each["ptype"] == "Cylinder":
+            each.scale(0.5,0.5,1)
+            each.location.x = each.location.x - each["radius"]
+            newbond = each.copy()
+            newbond.data = each.data.copy()
+            bpy.context.scene.link(newbond)
+            newbond.location.x = newbond.location.x + each["radius"]
+            #Join them
 
 def addon_ensure(addon_id):
         # Enable the addon, dont change preferences.

@@ -74,7 +74,17 @@ class MolPrintToolBar2(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_scalebonds", text="Scale Bonds")
         rowsub.prop(molprint, "bond_scale", text="")
-
+        rowsub = layout.row(align=True)
+        rowsub.operator("mesh.molprint_makedouble", text="Double Bonds")
+        rowsub = layout.row(align=True)
+        rowsub.label("DB scale")
+        rowsub.prop(molprint, "double_scale", text="")
+        rowsub = layout.row(align=True)
+        rowsub.label("DB separation")
+        rowsub.prop(molprint, "double_distance", text="")
+        rowsub = layout.row(align=True)
+        rowsub.label("DB rot")
+        rowsub.prop(molprint, "double_rot", text="")
 class MolPrintToolBar3(MolPrintToolBar,Panel):
     bl_category = "MolPrint"
     bl_label = "Atom/Bond Preferences"

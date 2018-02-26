@@ -53,7 +53,18 @@ else:
             )
 
 import math
+from mathutils import Matrix
+from math import radians
 from bpy.app.handlers import persistent
+
+def update_db_rot(self,context):
+
+	doubles = [value for value in bpy.context.selected_objects]
+	double_rot = bpy.context.scene.molprint.double_rot
+	
+	for each in doubles:
+		rot = Matrix.Rotation(radians(double_rot), 4, 'Y')
+		each.matrix_world *= rot
 
 class MolPrintSettings(PropertyGroup):
 
@@ -213,11 +224,35 @@ class MolPrintSettings(PropertyGroup):
             description="Fuse double bonds",
             default=False,
             )
+    double_scale = FloatProperty(
+            name="DB scale",
+            description="How much to scale double bonds down",
+            default=0.58,
+            precision=3,
+            min=0, max=1.5,
+            )
+    double_distance = FloatProperty(
+            name="DB separation distance",
+            description="Fuse double bonds",
+            default=1.6,
+            precision=3,
+            min=0, max=4,
+            )
+    double_rot = FloatProperty(
+    	    name="DB rotation",
+    	    description="Rotation around local Y",
+    	    default=0.0,
+    	    precision=2,
+    	    min=-100, max=100.0,
+    	    update=update_db_rot,
+    	    )
     multicolor = BoolProperty(
             name="Multicolor",
             description="Separate atoms and bonds of each group for multicolor printing",
             default=False,
             )
+    
+
 ## Addons Preferences Update Panel
 def update_panel(self, context):
     try:
@@ -329,6 +364,7 @@ classes = (
     operators.MolPrintExportAll,
     operators.MolPrintCPKSplit,
     operators.MolPrintSetPinGroup,
+    operators.MolPrintMakeDouble,
     MolPrintSettings,
     printerpreferences,
     )
