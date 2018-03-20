@@ -26,6 +26,7 @@ vdwdefine 1.78 @o=
 vdwdefine 1.8 @n=
 vdwdefine 2.0 @c=
 vdwdefine 1.22 @h=
+vdwdefine 2.1 @s=
 
 #Jmol stopped using cyl/spheres for VRML in 14.6.4
 #Must use older versions

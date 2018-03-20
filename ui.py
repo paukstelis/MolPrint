@@ -22,16 +22,19 @@
 
 import bmesh
 from bpy.types import Panel
+
+
 class MolPrintToolBar:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_label = "MolPrint"
-    
-class MolPrintToolBar1(MolPrintToolBar,Panel):
+
+
+class MolPrintToolBar1(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Import/Cleanup"
     bl_context = "objectmode"
-        
+
     def draw(self, context):
         layout = self.layout
 
@@ -49,14 +52,15 @@ class MolPrintToolBar1(MolPrintToolBar,Panel):
         rowsub.prop(molprint, "prim_detail", text="")
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_clean", text="Clean Scene")
-        #rowsub = layout.row(align=True)
-        #rowsub.operator("mesh.molprint_clean", text="Clean Scene")
+        # rowsub = layout.row(align=True)
+        # rowsub.operator("mesh.molprint_clean", text="Clean Scene")
 
-class MolPrintToolBar2(MolPrintToolBar,Panel):
+
+class MolPrintToolBar2(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Interactions"
     bl_context = "objectmode"
-        
+
     def draw(self, context):
         layout = self.layout
 
@@ -85,21 +89,25 @@ class MolPrintToolBar2(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.label("DB rot")
         rowsub.prop(molprint, "double_rot", text="")
-class MolPrintToolBar3(MolPrintToolBar,Panel):
+        rowsub = layout.row(align=True)
+        rowsub.operator("mesh.molprint_pip", text="Print-in-place")
+
+class MolPrintToolBar3(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Atom/Bond Preferences"
     bl_context = "objectmode"
     bl_options = {'DEFAULT_CLOSED'}
+
     def draw(self, context):
         layout = self.layout
 
         scene = context.scene
         molprint = scene.molprint
         obj = context.object
-        
+
         rowsub = layout.row(align=True)
         rowsub.label("H-bond radius")
-        rowsub.prop(molprint, "max_hbond", text="")        
+        rowsub.prop(molprint, "max_hbond", text="")
         rowsub = layout.row(align=True)
         rowsub.label("Carbon radius")
         rowsub.prop(molprint, "carbon_radius", text="")
@@ -119,22 +127,23 @@ class MolPrintToolBar3(MolPrintToolBar,Panel):
         rowsub.label("Sulfur radius")
         rowsub.prop(molprint, "sulfur_radius", text="")
 
-class MolPrintToolBar4(MolPrintToolBar,Panel):
+
+class MolPrintToolBar4(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Grouping"
     bl_context = "objectmode"
-        
+
     def draw(self, context):
         layout = self.layout
 
         scene = context.scene
         molprint = scene.molprint
         obj = context.object
-        #rowsub = layout.row(align=True)
-        #rowsub.operator("mesh.molprint_updategroups", text="Update Groups")
+        # rowsub = layout.row(align=True)
+        # rowsub.operator("mesh.molprint_updategroups", text="Update Groups")
         row = layout.row()
         rowsub = layout.row(align=True)
-        rowsub.prop(molprint,"autogroup")
+        rowsub.prop(molprint, "autogroup")
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_selecthbonds", text="Select H-bonds")
         rowsub = layout.row(align=True)
@@ -144,8 +153,9 @@ class MolPrintToolBar4(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_selectglyco", text="Select Glycosidic")
         rowsub = layout.row(align=True)
-        
-class MolPrintToolBar5(MolPrintToolBar,Panel):
+
+
+class MolPrintToolBar5(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Pinning/Joining"
     bl_context = "objectmode"
@@ -156,9 +166,9 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
         scene = context.scene
         molprint = scene.molprint
         obj = context.object
-        
+
         row = layout.row()
-        #rowsub = layout.row(align=True)
+        # rowsub = layout.row(align=True)
         rowsub = layout.row(align=True)
         rowsub.label("Pin sides")
         rowsub.prop(molprint, "pin_sides", text="")
@@ -177,20 +187,23 @@ class MolPrintToolBar5(MolPrintToolBar,Panel):
         rowsub.label("Hole size increase")
         rowsub.prop(molprint, "pinscale", text="")
         rowsub = layout.row(align=True)
-        rowsub.prop(molprint,"splitpins")
+        rowsub.prop(molprint, "splitpins")
+
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_setpingroup", text="Set Pin Group")
-        
+
         rowsub = layout.row(align=True)
-        rowsub.prop(molprint,"multicolor")
+        rowsub.prop(molprint, "multicolor")
         rowsub = layout.row(align=True)
-   
+
         rowsub.operator("mesh.molprint_pinjoin", text="Pin and Join")
 
-class MolPrintToolBar6(MolPrintToolBar,Panel):
+
+class MolPrintToolBar6(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "Floor and Export"
-    #bl_context = "objectmode"
+
+    # bl_context = "objectmode"
 
     def draw(self, context):
         layout = self.layout
@@ -198,10 +211,12 @@ class MolPrintToolBar6(MolPrintToolBar,Panel):
         scene = context.scene
         molprint = scene.molprint
         obj = context.object
-        
+
         row = layout.row()
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_floorall", text="Floor All")
+        rowsub = layout.row(align=True)
+        rowsub.operator("mesh.molprint_floormulti", text="Floor Multiple")
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_floorselected", text="Selective Floor")
         rowsub = layout.row(align=True)
@@ -209,16 +224,17 @@ class MolPrintToolBar6(MolPrintToolBar,Panel):
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_exportall", text="Export All")
 
+
 # So we can have a panel in both object mode and editmode
 class MolPrintFloorObject(MolPrintToolBar6):
-
     bl_context = "objectmode"
 
-class MolPrintFloorMesh(MolPrintToolBar6):
 
+class MolPrintFloorMesh(MolPrintToolBar6):
     bl_context = "mesh_edit"
 
-class MolPrintToolBar7(MolPrintToolBar,Panel):
+
+class MolPrintToolBar7(MolPrintToolBar, Panel):
     bl_category = "MolPrint"
     bl_label = "CPK Tools"
     bl_context = "objectmode"
@@ -228,10 +244,7 @@ class MolPrintToolBar7(MolPrintToolBar,Panel):
 
         scene = context.scene
         molprint = scene.molprint
-        obj = context.object        
+        obj = context.object
         row = layout.row()
         rowsub = layout.row(align=True)
         rowsub.operator("mesh.molprint_cpksplit", text="CPK by atom")
-
-
-
