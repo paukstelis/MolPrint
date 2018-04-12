@@ -136,12 +136,14 @@ def cylinder_between(pair, pintype=0, ptb=0.0, sides=0):
                                         location=pair[0].location
                                         )
         cone1 = bpy.context.scene.objects.active
+        cone1["ptype"] = "cone"
         bpy.context.object.rotation_euler[1] = theta
         bpy.context.object.rotation_euler[2] = phi
 
         # Cutcube for later differencing, eventually add as user adjustable variable
         bpy.ops.mesh.primitive_cube_add(radius=r1 * 0.75, location=pair[0].location)
         cutcube = bpy.context.scene.objects.active
+        cutcube["ptype"] = "cube"
         bpy.context.active_object.dimensions = pair[0]["radius"] * 1.75, r1 * 0.55, pair[0]["radius"] * 1.45
         bpy.context.object.rotation_euler[1] = theta
         bpy.context.object.rotation_euler[2] = phi
@@ -515,22 +517,12 @@ def joinall():
             if p1group == p2group:
                 pinpairs.remove(pair)
 
-        # For print-in-place bonds, will need to up-scale sphere and then do carve or parts will be touching
-        if pingroup["type"] == 2:
-            for each in pinpairs:
-                #scale sphere
-                each[0].scale = ((1.1,1.1,1.1))
-                bool_bmesh(each[1], each[0], 'DIFFERENCE', modapp=True)
-                each[0].scale = ((1.0,1.0,1.0))
-        else:
-            for each in pinpairs:
-                bool_bmesh(each[1], each[0], 'DIFFERENCE', modapp=True)
 
-        pinlist = []
-        conelist = []
-        oblist = []
 
         for each in pinpairs:
+            bool_bmesh(each[1], each[0], 'DIFFERENCE', modapp=True)
+
+        #for each in pinpairs:
             # Make pin objects and give them a specific ptype
             cylinder_between(each, pingroup["type"], pingroup["diameter"], pingroup["sides"])
 
@@ -643,6 +635,7 @@ def joinall():
             mat = group[0].data.materials[0]
             newcube = intersect_pin(group[0])
             newcube.data.materials.append(mat)
+
             # Do these if we are doing split pins
 
             if len(cutcubes) > 0 or len(cones) > 0:
@@ -656,6 +649,26 @@ def joinall():
 
     if bpy.context.scene.molprint.multicolor:
         color_by_radius()
+    #delete all pins and pin-like objects
+    for ob,pin in bpy.context.scene.molprint_lists.pinlist["pinlist"]:
+        bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            pinob = bpy.data.objects[pin]
+            pinob.select = True
+            bpy.ops.object.delete()
+        except:
+            print("pin missing")
+    #delete everything in the scene that is cube or cone
+    for each in bpy.context.scene.objects:
+        bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            if (each["ptype"] == "cone" or each["ptype"] == "cube"):
+                each.select = True
+                bpy.ops.object.delete()
+        except:
+            print("cube missing")
 
 
 def intersect_pin(ob):
@@ -668,13 +681,14 @@ def intersect_pin(ob):
     bpy.ops.transform.resize(value=(30, 30, 30))
     cube = bpy.context.selected_objects[0]
     cube["ptype"] = 'newcube'
+    '''
     pinlist[:] = (value for value in ob["pinlist"] if value != 'None')
     cube["pinlist"] = pinlist
     conelist[:] = (value for value in ob["conelist"] if value != 'None')
     cube["conelist"] = conelist
     cutcubelist[:] = (value for value in ob["cutcube"] if value != 'None')
     cube["cutcube"] = cutcubelist
-
+    '''
     cube["radius"] = ob["radius"]
     bool_carve(cube, ob, 'INTERSECT', modapp=True)
     bpy.ops.object.select_all(action='DESELECT')
@@ -728,9 +742,9 @@ def difference_pin(obj, thelist, doscale=True, carve=False):
         bool_carve(obj, firstpin, 'DIFFERENCE', modapp=True)
     else:
         bool_bmesh(obj, firstpin, 'DIFFERENCE', modapp=True)
-    bpy.ops.object.select_all(action='DESELECT')
-    firstpin.select = True
-    bpy.ops.object.delete()
+    #bpy.ops.object.select_all(action='DESELECT')
+    #firstpin.select = True
+    #bpy.ops.object.delete()
 
 
 def select_hbonds():

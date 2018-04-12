@@ -305,6 +305,8 @@ class MolPrintLists():
     selectedlist = []
     floorlist = []
 
+def reset_lists():
+    bpy.types.Scene.molprint_lists = MolPrintLists()
 
 # Where is the best place to put this? Really not sure.
 @persistent
@@ -327,6 +329,8 @@ def populatelists(scene):
             bpy.context.scene.molprint_lists.internames = json.loads(text_str)
         except:
             print("No previous interactions found")
+            #delete any previously defined interactions
+            reset_lists()
 
         try:
             text_obj = bpy.data.texts['pingroup.json']
@@ -334,6 +338,7 @@ def populatelists(scene):
             bpy.context.scene.molprint_lists.pingroups = json.loads(text_str)
         except:
             print("No previous pin groups found")
+            reset_lists()
 
         bpy.ops.mesh.molprint_updategroups()
 
