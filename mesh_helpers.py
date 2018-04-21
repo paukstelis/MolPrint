@@ -95,7 +95,7 @@ def scalebonds(scale_val):
             obj["radius"] = obj["radius"] * scale_val
 
 
-def cylinder_between(pair, pintype=0, ptb=0.0, sides=0):
+def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
     '''pair = (sphere,cylinder)'''
     if not ptb:
         ptb = bpy.context.scene.molprint.pintobond
@@ -170,7 +170,7 @@ def cylinder_between(pair, pintype=0, ptb=0.0, sides=0):
     bpy.ops.mesh.primitive_cylinder_add(
         vertices=sides,
         radius=r,
-        depth=dist,
+        depth=dist-decrease,
         location=(dx / 2 + x1, dy / 2 + y1, dz / 2 + z1)
     )
     pin = bpy.context.scene.objects.active
@@ -270,6 +270,8 @@ def clean_object():
     bpy.ops.mesh.select_interior_faces()
     bpy.ops.mesh.delete(type='FACE')
     bpy.ops.mesh.dissolve_limited()
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.separate(type='LOOSE')
     bpy.ops.object.mode_set(mode='OBJECT')
 
 
@@ -524,7 +526,7 @@ def joinall():
 
         #for each in pinpairs:
             # Make pin objects and give them a specific ptype
-            cylinder_between(each, pingroup["type"], pingroup["diameter"], pingroup["sides"])
+            cylinder_between(each, pingroup["type"], pingroup["diameter"], pingroup["sides"], pingroup["decrease"])
 
             # put the sphere and the pin cylinder into a list
             pin = bpy.context.scene.objects.active

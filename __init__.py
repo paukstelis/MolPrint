@@ -261,7 +261,13 @@ class MolPrintSettings(PropertyGroup):
         description="Flag as print-in-place rotable bonds",
         default=False,
     )
-
+    pin_decrease = FloatProperty(
+        name="Pin decrease",
+        description="Amount to decrease pin length to avoid overlaps. Note, may leave extra pieces inside atoms!",
+        default=0,
+        precision=2,
+        min=0, max=4,
+    )
 
 ## Addons Preferences Update Panel
 def update_panel(self, context):

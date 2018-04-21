@@ -551,6 +551,7 @@ class MolPrintSetPinGroup(Operator):
         pinset["pairs"] = mesh_helpers.getpairs()
         pinset["diameter"] = bpy.context.scene.molprint.pintobond
         pinset["sides"] = bpy.context.scene.molprint.pin_sides
+        pinset["decrease"] = bpy.context.scene.molprint.pin_decrease
         pingroups.append(pinset)
         bpy.ops.object.select_all(action='DESELECT')
         return {'FINISHED'}

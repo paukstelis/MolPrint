@@ -186,6 +186,11 @@ class MolPrintToolBar5(MolPrintToolBar, Panel):
         rowsub = layout.row(align=True)
         rowsub.label("Hole size increase")
         rowsub.prop(molprint, "pinscale", text="")
+
+        rowsub = layout.row(align=True)
+        rowsub.label("Pin Len. decrease")
+        rowsub.prop(molprint, "pin_decrease", text="")
+
         rowsub = layout.row(align=True)
         rowsub.prop(molprint, "splitpins")
 
