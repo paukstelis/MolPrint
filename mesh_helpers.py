@@ -88,12 +88,16 @@ def makestrut(obj1, obj2):
 
 def scalebonds(scale_val):
     for obj in bpy.context.scene.objects:
+        bpy.ops.object.select_all(action='DESELECT')
         if obj["ptype"] == 'Cylinder' and obj["hbond"] == 0:
+            obj.select = True
             # scale the object
             obj.scale = (scale_val, 1, scale_val)
             # reset the radius value
+            bpy.ops.object.transform_apply(scale=True)
             newradius = obj.dimensions.x/2
             obj["radius"] = newradius
+
 
 
 def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
