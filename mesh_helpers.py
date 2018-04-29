@@ -92,7 +92,8 @@ def scalebonds(scale_val):
             # scale the object
             obj.scale = (scale_val, 1, scale_val)
             # reset the radius value
-            obj["radius"] = obj["radius"] * scale_val
+            newradius = obj.dimensions.x/2
+            obj["radius"] = newradius
 
 
 def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
