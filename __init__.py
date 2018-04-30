@@ -353,9 +353,13 @@ def populatelists(scene):
 def savelists(scene):
     import json
     #delete any old text data blocks first, or we end up with multiple lists.
-    for each in bpy.data.texts:
-        bpy.data.texts.remove(each)
-
+    #for each in bpy.data.texts:
+    #    print(each)
+    try:
+        bpy.data.texts.remove(bpy.data.texts["interactions.json"])
+        bpy.data.texts.remove(bpy.data.texts["pingroup.json"])
+    except:
+        print("No previous text to clear")
     i = json.dumps(bpy.context.scene.molprint_lists.internames, sort_keys=True, indent=2)
     text_block = bpy.data.texts.new('interactions.json')
     text_block.from_string(i)
