@@ -188,12 +188,13 @@ def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
         clean_object()
         bpy.context.scene.molprint_lists.splitlist["cutcube"].append((pair[1].name, cutcube.name))
         bpy.context.scene.molprint_lists.splitlist["conelist"].append((pair[0].name, cone1.name))
+        return
 
     if pip:
         bool_carve(pin, cone1, 'UNION', modapp=True)
         clean_object()
         bpy.context.scene.molprint_lists.splitlist["conelist"].append((pair[0].name, cone1.name))
-
+        return
 
 def bmesh_copy_from_object(obj, transform=True, triangulate=True, apply_modifiers=False):
     assert (obj.type == 'MESH')
@@ -466,8 +467,8 @@ def radius_sort(tosort):
     # Create list that contains all objects by radius. Tosort is the list to sort from
     sortlist = [ob for ob in tosort]
     for each in sortlist:
-    	print(each)
-    	print(each["radius"])
+        print(each)
+        print(each["radius"])
     sortlist.sort(key=lambda o: o["radius"])
     unique = []
     for key, group in itertools.groupby(sortlist, lambda item: item["radius"]):
@@ -503,9 +504,7 @@ def joinall():
     # Turn these off so it isn't constantly trying to update
     bpy.context.scene.molprint.interact = False
     bpy.context.scene.molprint.autogroup = False
-    # TODO: Do all operations on PIP bonds first
-    # off-load for now so it is easier to follow
-    #do_pip()
+
     # Sanity check to make sure pairs are in different groups, otherwise things explode
     for pingroup in bpy.context.scene.molprint_lists.pingroups:
         pinpairs = []
@@ -527,8 +526,6 @@ def joinall():
             if p1group == p2group:
                 pinpairs.remove(pair)
 
-
-
         for each in pinpairs:
             bool_bmesh(each[1], each[0], 'DIFFERENCE', modapp=True)
 
@@ -542,7 +539,7 @@ def joinall():
             bpy.context.scene.molprint_lists.pinlist["pinlist"].append((each[0].name, pin.name))
 
             # union cylinder and pin if normal mode
-            bool_bmesh(each[1], pin, 'UNION', modapp=True)
+            bool_carve(each[1], pin, 'UNION', modapp=True)
             bpy.ops.object.select_all(action='DESELECT')
 
     for group in bpy.context.scene.molprint_lists.grouplist:
@@ -605,16 +602,16 @@ def joinall():
                 except:
                     continue
                 if len(sp["conelist"]) > 0:
-                	difference_pin(sp, sp["pinlist"], doscale=False, carve=True)
-                	difference_pin(sp, sp["conelist"])
+                    difference_pin(sp, sp["pinlist"], doscale=False, carve=True)
+                    difference_pin(sp, sp["conelist"])
                 else:
-                	difference_pin(sp, sp["pinlist"], carve=True)
-                	
+                    difference_pin(sp, sp["pinlist"], carve=True)
+                    
             # Cylinder fixing
             newcube = intersect_pin(cylob)
             # Difference pinning
             if len(newcube["cutcube"]) > 0:
-            	difference_pin(newcube, newcube["cutcube"], doscale=False, carve=True)
+                difference_pin(newcube, newcube["cutcube"], doscale=False, carve=True)
 
         # combine all pins objects for each group
         #old way fails if groups share pins between them
@@ -635,20 +632,21 @@ def joinall():
                 cc[:] = (b for a, b in allcuts if a == obj.name)
                 
                 if len(p) > 0:
-                	cyls = []
-                	#pre-difference our sphere with interaction cylinders just in case
-                	cyls[:] = (b for a, b in bpy.context.scene.molprint_lists.interactionlist if a == obj)
-                	print(cyls)
-                	for cyl in cyls:
-                	 	 bool_carve(cyl,obj, 'DIFFERENCE', modapp=True)
-                	 	 
-                	difference_pin(obj, p, carve=True)
-                	bpy.ops.object.select_all(action='DESELECT')
+                    cyls = []
+                    #Why did I do this?
+                    #pre-difference our sphere with interaction cylinders just in case
+                    cyls[:] = (b for a, b in bpy.context.scene.molprint_lists.interactionlist if a == obj)
+                    #print(cyls)
+                    #for cyl in cyls:
+                    #     bool_carve(cyl,obj, 'DIFFERENCE', modapp=True)
+                         
+                    difference_pin(obj, p, carve=True)
+                    bpy.ops.object.select_all(action='DESELECT')
                 
                 
             for obj in group:
                 obj.select = True
-            '''    
+
             bpy.context.scene.objects.active = group[0]
             bpy.ops.object.join()
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
@@ -656,7 +654,7 @@ def joinall():
             newcube = intersect_pin(group[0])
             newcube.data.materials.append(mat)
             clean_object()
-            '''
+
 
 
     #delete all pins and pin-like objects
@@ -755,8 +753,8 @@ def difference_pin2(obj, thelist, doscale=True, carve=False):
         bool_bmesh(obj, firstpin, 'DIFFERENCE', modapp=True)
     #bpy.ops.object.select_all(action='DESELECT')
     #firstpin.select = True
-    #bpy.ops.object.delete()	
-	
+    #bpy.ops.object.delete()    
+    
 def difference_pin(obj, thelist, doscale=True, carve=False):
     pinscale = bpy.context.scene.molprint.pinscale
     if len(thelist) > 0:
