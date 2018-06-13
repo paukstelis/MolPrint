@@ -132,7 +132,7 @@ def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
     # First make a cone
     if split:
         r1 = pair[1]["radius"] * ptb * 0.9
-        r2 = pair[1]["radius"] * ptb * 1.1
+        r2 = pair[1]["radius"] * ptb * 1.11
         # Consider doing two cones where cone2 would provide a slight bevel
         bpy.ops.mesh.primitive_cone_add(vertices=sides+2,
                                         radius1=r1,
@@ -146,10 +146,11 @@ def cylinder_between(pair, pintype=0, ptb=0.0, sides=0, decrease=0):
         bpy.context.object.rotation_euler[2] = phi
 
         # Cutcube for later differencing, eventually add as user adjustable variable
-        bpy.ops.mesh.primitive_cube_add(radius=r1 * 0.75, location=pair[0].location)
+        bpy.ops.mesh.primitive_cube_add(radius=r1 * 0.5, location=pair[0].location)
         cutcube = bpy.context.scene.objects.active
         cutcube["ptype"] = "cube"
         bpy.context.active_object.dimensions = pair[0]["radius"] * 1.75, r1 * 0.50, pair[0]["radius"] * 1.45
+        bpy.ops.object.transform_apply(scale=True)
         bpy.context.object.rotation_euler[1] = theta
         bpy.context.object.rotation_euler[2] = phi
 
@@ -632,17 +633,26 @@ def joinall():
                 cc[:] = (b for a, b in allcuts if a == obj.name)
                 
                 if len(p) > 0:
-                    cyls = []
+                    #cyls = []
                     #Why did I do this?
                     #pre-difference our sphere with interaction cylinders just in case
-                    cyls[:] = (b for a, b in bpy.context.scene.molprint_lists.interactionlist if a == obj)
+                    #cyls[:] = (b for a, b in bpy.context.scene.molprint_lists.interactionlist if a == obj)
                     #print(cyls)
                     #for cyl in cyls:
                     #     bool_carve(cyl,obj, 'DIFFERENCE', modapp=True)
                          
                     difference_pin(obj, p, carve=True)
                     bpy.ops.object.select_all(action='DESELECT')
-                
+                if len(cc) > 0:
+                	difference_pin(obj, cc, carve=True)
+                	bpy.ops.object.select_all(action='DESELECT')
+                	for each in cc:
+                		try:
+                			bpy.context.scene.objects[each].select = True
+                			bpy.ops.object.delete()
+                		except:
+                			print("CC missing")
+                	bpy.ops.object.select_all(action='DESELECT')	
                 
             for obj in group:
                 obj.select = True
