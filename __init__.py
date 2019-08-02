@@ -71,7 +71,7 @@ class MolPrintSettings(PropertyGroup):
     prim_detail = IntProperty(
         name="Number of subdivisions for primitive detail",
         description="Number of circle division for objects. Large numbers slow things down!",
-        default=16,
+        default=24,
     )
     strut_radius = FloatProperty(
         name="Strut radius",
@@ -310,6 +310,8 @@ class MolPrintLists():
     grouplist = []
     selectedlist = []
     floorlist = []
+    bonelist = []
+    finalbones = []
 
 def reset_lists():
     bpy.types.Scene.molprint_lists = MolPrintLists()
@@ -398,6 +400,7 @@ classes = (
     operators.MolPrintSetPinGroup,
     operators.MolPrintMakeDouble,
     operators.MolPrintPIP,
+    operators.MolPrintShowConnectivity,
     MolPrintSettings,
     printerpreferences,
 )

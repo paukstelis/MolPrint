@@ -18,7 +18,7 @@ hide everything, solvent
 represent b+s
 ~disp solvent
 setattr M ballScale 0.3
-setattr M stickScale 1.8
+setattr M stickScale 1.6
 bondcolor grey
 setattr p drawMode 1
 #define or carbonyls/keto oxygens have different radii

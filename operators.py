@@ -89,7 +89,15 @@ class ImportX3DE(Operator, ImportHelper, IOX3DOrientationHelper):
         bpy.context.scene.molprint.cleaned = False
         return import_x3de.load(context, **keywords)
 
-
+class MolPrintShowConnectivity(Operator):
+    bl_idname = "mesh.molprint_showconnectivity"
+    bl_label = "make connectivity cylinders"
+    
+    def execute(self, context):
+        for a,b in bpy.context.scene.molprint_lists.interactionlist:
+            mesh_helpers.cylinder_between((a,b),pintype=0,ptb=0.2,sides=16,decrease=0)
+        return {'FINISHED'}
+        
 class MolPrintClean(Operator):
     """Clean up Imported VRML objects"""
     bl_idname = "mesh.molprint_clean"
@@ -147,7 +155,7 @@ class MolPrintClean(Operator):
         # reset any pin groups
         bpy.context.scene.molprint_lists.pingroups = []
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.ops.mesh.molprint_interactions()
+        #bpy.ops.mesh.molprint_interactions()
 
         return {'FINISHED'}
 
@@ -224,7 +232,7 @@ class MolPrintAddStrut(Operator):
         selected = bpy.context.selected_objects
         # number of conditions before allowing strut creation
         if len(selected) == 2 and (
-                selected[0]['ptype'] == selected[1]['ptype'] == 'Sphere') and bpy.context.scene.molprint.interact:
+                selected[0]['ptype'] == selected[1]['ptype'] == 'Sphere'):
             return True
         else:
             return False
@@ -572,6 +580,7 @@ class MolPrintPIP(Operator):
 
     def execute(self,context):
         selected = bpy.context.selected_objects
+        bonelist = bpy.context.scene.molprint_lists.bonelist
         #determine which is sphere and which is cyl
         cyl = None
         sphere = None
@@ -581,18 +590,23 @@ class MolPrintPIP(Operator):
         else:
             cyl = selected[1]
             sphere = selected[0]
-
+            
+        #Add cyl to bonelist
+        bonelist.append({"cylparent" : cyl.name,\
+                        "head" : cyl.location,\
+                        "tail" : sphere.location,\
+                        "parent" : None})
         #Create pin, cone, etc.
-        mesh_helpers.cylinder_between((sphere,cyl),2,0.6,18)
+        mesh_helpers.cylinder_between((sphere,cyl),2,0.98,18)
         pin = bpy.context.scene.objects.active
         #Difference cylinder with sphere
-        sphere.scale = ((1.08, 1.08, 1.08))
+        sphere.scale = ((1.02, 1.02, 1.02)) #was 1.06
         mesh_helpers.bool_bmesh(cyl, sphere, 'DIFFERENCE', modapp=True)
         sphere.scale = ((1.0, 1.0, 1.0))
         #Union pin with cylinder
         mesh_helpers.bool_bmesh(cyl, pin, 'UNION', modapp=True)
         #Difference cone with sphere
-        cyl.scale = ((1.12, 1.02, 1.12))
+        cyl.scale = ((1.08, 1.02, 1.08)) #was 1.12, 1.02, 1.12, too loose on MK3, 1.05 too tight
         mesh_helpers.bool_carve(sphere, cyl, "DIFFERENCE", modapp=True)
         cyl.scale = ((1.0, 1.0, 1.0))
         #delete pin
@@ -608,7 +622,36 @@ class MolPrintPIP(Operator):
         #reset conelist
         bpy.context.scene.molprint_lists.splitlist["conelist"] = []
 
+        #self.makebone(cyl, sphere, cyl.name)
         return {'FINISHED'}
+        
+    def makebone(self, cyl, sphere, bname):
+        head = cyl.location
+        tail = sphere.location
+        armname = 'Arm_{0}'.format(cyl.name)
+        try:
+           armature_object = bpy.data.objects[armname]
+           armature_data = bpy.data.objects[armname]
+        except:
+           bpy.data.armatures.new(armname)
+           armature = bpy.data.armatures.new(armname)
+           armature_object = bpy.data.objects.new(armname, armature)
+           #Link armature object to our scene
+           bpy.context.scene.objects.link(armature_object)
+           armature_data = bpy.data.objects[armname]
+
+        bpy.context.scene.objects.active = armature_data
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        edit_bones = armature_object.data.edit_bones
+
+        b = edit_bones.new(bname)
+        # a new bone will have zero length and not be kept
+        # move the head/tail to keep the bone
+        b.head = (head[0], head[1], head[2])
+        b.tail = (tail[0], tail[1], tail[2])
+
+        # exit edit mode to save bones so they can be used in pose mode
+        bpy.ops.object.mode_set(mode='OBJECT')
 
 class MolPrintMakeDouble(Operator):
     """Create Double Bonds from selected cylinders"""
@@ -640,8 +683,8 @@ class MolPrintMakeDouble(Operator):
 
                 each.matrix_world.translation += trans_world_plus
                 newbond.matrix_world.translation += trans_world_minus
-                each.scale = (double_scale, 1, double_scale)
-                newbond.scale = (double_scale, 1, double_scale)
+                each.scale = (double_scale, 1.35, double_scale)
+                newbond.scale = (double_scale, 1.35, double_scale)
 
                 # Unionize. Takes longer than join, but might be safer?
                 mesh_helpers.bool_carve(each, newbond, 'UNION', modapp=True)
